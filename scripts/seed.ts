@@ -10,6 +10,7 @@ async function main() {
   await db.user.deleteMany()
 
   // === USERS ===
+  await db.user.create({ data: { nama: 'Super Administrator', username: 'superadmin', password: 'super123', role: 'SUPERADMIN' } })
   await db.user.create({ data: { nama: 'Administrator', username: 'admin', password: 'admin123', role: 'ADMIN' } })
   await db.user.create({ data: { nama: 'Operator Produksi', username: 'operator', password: 'operator123', role: 'OPERATOR' } })
   await db.user.create({ data: { nama: 'Staff Gudang', username: 'gudang', password: 'gudang123', role: 'GUDANG' } })
@@ -85,7 +86,8 @@ async function main() {
     { sparepartId: sp3.id, tipe: 'KELUAR', jumlah: 10, referensi: 'WO-2025-075', catatan: 'Service boiler', tanggal: new Date('2025-08-22') },
   ]})
 
-  console.log('✅ Seed berhasil! Users: 3, Kategori: 6, Supplier: 4, Mesin: 5, Sparepart: 15, Transaksi: 20')
+  console.log('✅ Seed berhasil! Users: 4, Kategori: 6, Supplier: 4, Mesin: 5, Sparepart: 15, Transaksi: 20')
+  console.log('   Login: superadmin/super123, admin/admin123, operator/operator123, gudang/gudang123')
 }
 
 main().catch((e) => { console.error(e); process.exit(1) }).finally(async () => { await db.$disconnect() })

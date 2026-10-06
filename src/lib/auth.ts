@@ -19,10 +19,21 @@ export function getSessionUser(req: NextRequest): User | null {
 }
 
 /**
- * Cek apakah user adalah ADMIN. Return user jika admin, null jika bukan.
+ * Cek apakah user adalah ADMIN atau SUPERADMIN.
+ * Return user jika admin/superadmin, null jika bukan.
  */
 export function requireAdmin(req: NextRequest): User | null {
   const user = getSessionUser(req)
-  if (!user || user.role !== 'ADMIN') return null
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) return null
+  return user
+}
+
+/**
+ * Cek apakah user adalah SUPERADMIN.
+ * Return user jika superadmin, null jika bukan.
+ */
+export function requireSuperadmin(req: NextRequest): User | null {
+  const user = getSessionUser(req)
+  if (!user || user.role !== 'SUPERADMIN') return null
   return user
 }

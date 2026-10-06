@@ -13,7 +13,8 @@ model User {
   nama      String
   username  String   @unique
   password  String
-  role      String   @default("OPERATOR") // ADMIN / OPERATOR / GUDANG
+  role      String   @default("OPERATOR") // SUPERADMIN / ADMIN / OPERATOR / GUDANG
+  transaksi TransaksiStok[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -94,6 +95,7 @@ model TransaksiStok {
   referensi   String?
   catatan     String?
   userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   tanggal     DateTime   @default(now())
   createdAt   DateTime   @default(now())
 }

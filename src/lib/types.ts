@@ -1,6 +1,6 @@
 // Tipe data untuk aplikasi sparepart mesin industri
 
-export type UserRole = 'ADMIN' | 'OPERATOR' | 'GUDANG'
+export type UserRole = 'SUPERADMIN' | 'ADMIN' | 'OPERATOR' | 'GUDANG'
 export type StatusMesin = 'Aktif' | 'Maintenance' | 'Berhenti'
 export type TipeTransaksi = 'MASUK' | 'KELUAR'
 export type StatusStok = 'aman' | 'menipis' | 'habis'
@@ -101,7 +101,17 @@ export interface DashboardData {
   }>
 }
 
-export type ViewName = 'dashboard' | 'sparepart' | 'mesin' | 'supplier' | 'transaksi'
+export type ViewName = 'dashboard' | 'sparepart' | 'mesin' | 'supplier' | 'transaksi' | 'users'
+
+export interface UserRecord {
+  id: string
+  nama: string
+  username: string
+  role: UserRole
+  createdAt: string
+  updatedAt: string
+  _count?: { transaksi: number }
+}
 
 // Permission matrix per role
 export const ROLE_PERMISSIONS: Record<UserRole, {
@@ -113,7 +123,21 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   canDeleteSupplier: boolean
   canTransaksiKeluar: boolean
   canTransaksiMasuk: boolean
+  canExportExcel: boolean
+  canManageUsers: boolean
 }> = {
+  SUPERADMIN: {
+    canEditSparepart: true,
+    canDeleteSparepart: true,
+    canEditMesin: true,
+    canDeleteMesin: true,
+    canEditSupplier: true,
+    canDeleteSupplier: true,
+    canTransaksiKeluar: true,
+    canTransaksiMasuk: true,
+    canExportExcel: true,
+    canManageUsers: true,
+  },
   ADMIN: {
     canEditSparepart: true,
     canDeleteSparepart: true,
@@ -123,6 +147,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canDeleteSupplier: true,
     canTransaksiKeluar: true,
     canTransaksiMasuk: true,
+    canExportExcel: true,
+    canManageUsers: false,
   },
   GUDANG: {
     canEditSparepart: true,
@@ -133,6 +159,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canDeleteSupplier: false,
     canTransaksiKeluar: true,
     canTransaksiMasuk: true,
+    canExportExcel: false,
+    canManageUsers: false,
   },
   OPERATOR: {
     canEditSparepart: false,
@@ -143,16 +171,20 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canDeleteSupplier: false,
     canTransaksiKeluar: true,
     canTransaksiMasuk: false,
+    canExportExcel: false,
+    canManageUsers: false,
   },
 }
 
 export const ROLE_LABEL: Record<UserRole, string> = {
+  SUPERADMIN: 'Superadmin',
   ADMIN: 'Administrator',
   OPERATOR: 'Operator',
   GUDANG: 'Staff Gudang',
 }
 
 export const ROLE_BADGE_COLOR: Record<UserRole, string> = {
+  SUPERADMIN: 'bg-purple-100 text-purple-800 border-purple-200',
   ADMIN: 'bg-slate-100 text-slate-700 border-slate-200',
   OPERATOR: 'bg-orange-50 text-orange-700 border-orange-200',
   GUDANG: 'bg-amber-50 text-amber-700 border-amber-200',

@@ -106,7 +106,7 @@ export function SupplierView({ user }: { user: User }) {
             ]}
             filters={{ search }}
             showImport={perm.canEditSupplier}
-            canExportExcel={user.role === 'ADMIN'}
+            canExportExcel={perm.canExportExcel}
             onImported={loadData}
           />
           {perm.canEditSupplier && (

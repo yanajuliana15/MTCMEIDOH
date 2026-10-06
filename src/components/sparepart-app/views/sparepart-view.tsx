@@ -185,7 +185,7 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
               statusStok: filterStatus !== 'all' ? filterStatus : undefined,
             }}
             showImport={perm.canEditSparepart}
-            canExportExcel={user.role === 'ADMIN'}
+            canExportExcel={perm.canExportExcel}
             onImported={loadData}
           />
           {perm.canEditSparepart && (

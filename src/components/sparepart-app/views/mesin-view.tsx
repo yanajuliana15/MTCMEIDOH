@@ -134,7 +134,7 @@ export function MesinView({ user }: { user: User }) {
               status: filterStatus !== 'all' ? filterStatus : undefined,
             }}
             showImport={perm.canEditMesin}
-            canExportExcel={user.role === 'ADMIN'}
+            canExportExcel={perm.canExportExcel}
             onImported={loadData}
           />
           {perm.canEditMesin && (

@@ -9,6 +9,7 @@ import { SparepartView } from '@/components/sparepart-app/views/sparepart-view'
 import { MesinView } from '@/components/sparepart-app/views/mesin-view'
 import { SupplierView } from '@/components/sparepart-app/views/supplier-view'
 import { TransaksiView } from '@/components/sparepart-app/views/transaksi-view'
+import { UserView } from '@/components/sparepart-app/views/user-view'
 
 export function SparepartApp() {
   const [user, setUser] = useState<User | null>(null)
@@ -72,6 +73,7 @@ export function SparepartApp() {
           {view === 'mesin' && <MesinView user={user} />}
           {view === 'supplier' && <SupplierView user={user} />}
           {view === 'transaksi' && <TransaksiView user={user} />}
+          {view === 'users' && user.role === 'SUPERADMIN' && <UserView user={user} />}
         </main>
       </div>
     </div>

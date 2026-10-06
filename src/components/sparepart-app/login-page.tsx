@@ -106,7 +106,8 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
 
             <div className="mt-5 pt-4 border-t">
               <p className="text-xs text-center text-muted-foreground mb-3">Akun Demo (klik untuk isi)</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <DemoBtn letter="S" name="Superadmin" desc="Full + Users" onClick={() => fillDemo('superadmin', 'super123')} />
                 <DemoBtn letter="A" name="Admin" desc="Full access" onClick={() => fillDemo('admin', 'admin123')} />
                 <DemoBtn letter="G" name="Gudang" desc="Edit stok" onClick={() => fillDemo('gudang', 'gudang123')} />
                 <DemoBtn letter="O" name="Operator" desc="Stok keluar" onClick={() => fillDemo('operator', 'operator123')} />

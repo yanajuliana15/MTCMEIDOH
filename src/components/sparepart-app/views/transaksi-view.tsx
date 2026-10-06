@@ -102,7 +102,7 @@ export function TransaksiView({ user }: { user: User }) {
             ]}
             filters={{ tipe: filterTipe !== 'all' ? filterTipe : undefined }}
             showImport={canAddTransaksi}
-            canExportExcel={user.role === 'ADMIN'}
+            canExportExcel={perm.canExportExcel}
             onImported={loadData}
           />
           {canAddTransaksi && (

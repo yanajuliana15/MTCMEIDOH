@@ -3,11 +3,12 @@
 import { cn } from '@/lib/utils'
 import type { ViewName, User } from '@/lib/types'
 import { ROLE_LABEL, ROLE_BADGE_COLOR } from '@/lib/types'
-import { LayoutDashboard, Package, Cog, Truck, ArrowLeftRight, Factory, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, Cog, Truck, ArrowLeftRight, Factory, LogOut, ShieldCheck } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useState } from 'react'
+import { ROLE_PERMISSIONS } from '@/lib/types'
 
 interface SidebarProps {
   activeView: ViewName
@@ -17,12 +18,13 @@ interface SidebarProps {
   onLogout: () => void
 }
 
-const navItems: Array<{ id: ViewName; label: string; icon: typeof LayoutDashboard }> = [
+const navItems: Array<{ id: ViewName; label: string; icon: typeof LayoutDashboard; superadminOnly?: boolean }> = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'sparepart', label: 'Katalog Sparepart', icon: Package },
   { id: 'mesin', label: 'Mesin Industri', icon: Cog },
   { id: 'supplier', label: 'Supplier', icon: Truck },
   { id: 'transaksi', label: 'Transaksi Stok', icon: ArrowLeftRight },
+  { id: 'users', label: 'Manajemen User', icon: ShieldCheck, superadminOnly: true },
 ]
 
 export function Sidebar({ activeView, onViewChange, alertsCount, user, onLogout }: SidebarProps) {
@@ -43,7 +45,9 @@ export function Sidebar({ activeView, onViewChange, alertsCount, user, onLogout 
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => !item.superadminOnly || user.role === 'SUPERADMIN')
+            .map((item) => {
             const Icon = item.icon
             const active = activeView === item.id
             return (
@@ -57,7 +61,7 @@ export function Sidebar({ activeView, onViewChange, alertsCount, user, onLogout 
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className={cn('h-4 w-4', item.id === 'users' && !active && 'text-purple-500')} />
                 <span>{item.label}</span>
                 {item.id === 'sparepart' && alertsCount > 0 && (
                   <span className={cn(
@@ -139,32 +143,37 @@ export function MobileNav({ activeView, onViewChange, alertsCount, user, onLogou
       </header>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-card grid grid-cols-5">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const active = activeView === item.id
-          return (
-            <button
-              key={item.id}
-              onClick={() => onViewChange(item.id)}
-              className={cn(
-                'relative flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium',
-                active ? 'text-primary' : 'text-muted-foreground'
-              )}
-            >
-              <div className="relative">
-                <Icon className="h-5 w-5" />
-                {item.id === 'sparepart' && alertsCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center">
-                    {alertsCount}
-                  </span>
-                )}
-              </div>
-              <span className="truncate max-w-full px-1">{item.label.split(' ')[0]}</span>
-            </button>
-          )
-        })}
-      </nav>
+      {(() => {
+        const visibleItems = navItems.filter((item) => !item.superadminOnly || user.role === 'SUPERADMIN')
+        return (
+          <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-card grid ${visibleItems.length === 6 ? 'grid-cols-6' : 'grid-cols-5'}`}>
+            {visibleItems.map((item) => {
+              const Icon = item.icon
+              const active = activeView === item.id
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onViewChange(item.id)}
+                  className={cn(
+                    'relative flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium',
+                    active ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  <div className="relative">
+                    <Icon className={cn('h-5 w-5', item.id === 'users' && !active && 'text-purple-500')} />
+                    {item.id === 'sparepart' && alertsCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center">
+                        {alertsCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="truncate max-w-full px-0.5">{item.label.split(' ')[0]}</span>
+                </button>
+              )
+            })}
+          </nav>
+        )
+      })()}
 
       <AlertDialog open={confirmLogout} onOpenChange={setConfirmLogout}>
         <AlertDialogContent>
