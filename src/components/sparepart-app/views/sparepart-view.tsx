@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { useToast } from '@/hooks/use-toast'
 import { Search, Plus, Edit, Trash2, Package, Filter, AlertTriangle, X, Cog, ArrowLeftRight } from 'lucide-react'
+import { ExportImportButtons } from '@/components/sparepart-app/export-import-buttons'
 
 interface SparepartViewProps {
   user: User
@@ -148,11 +149,44 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
             )}
           </p>
         </div>
-        {perm.canEditSparepart && (
-          <Button onClick={() => { setEditingItem(null); setIsFormOpen(true) }}>
-            <Plus className="h-4 w-4 mr-2" /> Tambah Sparepart
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportImportButtons
+            entity="sparepart"
+            data={items.map((it) => ({
+              kode: it.kode,
+              nama: it.nama,
+              kategori: it.kategori?.nama || '',
+              supplier: it.supplier?.nama || '',
+              satuan: it.satuan,
+              stok: String(it.stok),
+              stokMinimum: String(it.stokMinimum),
+              hargaBeli: String(it.hargaBeli),
+              hargaJual: String(it.hargaJual),
+              lokasiRak: it.lokasiRak || '',
+              catatan: it.catatan || '',
+            }))}
+            columns={[
+              { key: 'kode', label: 'kode' },
+              { key: 'nama', label: 'nama' },
+              { key: 'kategori', label: 'kategori' },
+              { key: 'supplier', label: 'supplier' },
+              { key: 'satuan', label: 'satuan' },
+              { key: 'stok', label: 'stok' },
+              { key: 'stokMinimum', label: 'stokMinimum' },
+              { key: 'hargaBeli', label: 'hargaBeli' },
+              { key: 'hargaJual', label: 'hargaJual' },
+              { key: 'lokasiRak', label: 'lokasiRak' },
+              { key: 'catatan', label: 'catatan' },
+            ]}
+            showImport={perm.canEditSparepart}
+            onImported={loadData}
+          />
+          {perm.canEditSparepart && (
+            <Button onClick={() => { setEditingItem(null); setIsFormOpen(true) }}>
+              <Plus className="h-4 w-4 mr-2" /> Tambah Sparepart
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

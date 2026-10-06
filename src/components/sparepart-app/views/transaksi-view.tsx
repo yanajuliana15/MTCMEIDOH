@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { ArrowDownToLine, ArrowUpFromLine, Plus, History, TrendingDown } from 'lucide-react'
+import { ExportImportButtons } from '@/components/sparepart-app/export-import-buttons'
 
 export function TransaksiView({ user }: { user: User }) {
   const perm = ROLE_PERMISSIONS[user.role]
@@ -78,11 +79,36 @@ export function TransaksiView({ user }: { user: User }) {
           <h1 className="text-2xl font-bold tracking-tight">Transaksi Stok</h1>
           <p className="text-sm text-muted-foreground mt-1">Riwayat {transaksi.length} transaksi stok masuk/keluar</p>
         </div>
-        {canAddTransaksi && (
-          <Button onClick={() => setIsFormOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Catat Transaksi
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportImportButtons
+            entity="transaksi"
+            data={transaksi.map((t) => ({
+              tanggal: new Date(t.tanggal).toISOString().slice(0, 16),
+              kodeSparepart: t.sparepart?.kode || '',
+              namaSparepart: t.sparepart?.nama || '',
+              tipe: t.tipe,
+              jumlah: String(t.jumlah),
+              satuan: t.sparepart?.satuan || '',
+              referensi: t.referensi || '',
+              catatan: t.catatan || '',
+            }))}
+            columns={[
+              { key: 'tanggal', label: 'tanggal' },
+              { key: 'kodeSparepart', label: 'kodeSparepart' },
+              { key: 'tipe', label: 'tipe' },
+              { key: 'jumlah', label: 'jumlah' },
+              { key: 'referensi', label: 'referensi' },
+              { key: 'catatan', label: 'catatan' },
+            ]}
+            showImport={canAddTransaksi}
+            onImported={loadData}
+          />
+          {canAddTransaksi && (
+            <Button onClick={() => setIsFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Catat Transaksi
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 grid-cols-3">

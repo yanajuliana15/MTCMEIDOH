@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { Search, Plus, Edit, Trash2, Truck, Phone, Mail, MapPin, User as UserIcon, Package } from 'lucide-react'
+import { ExportImportButtons } from '@/components/sparepart-app/export-import-buttons'
 
 export function SupplierView({ user }: { user: User }) {
   const perm = ROLE_PERMISSIONS[user.role]
@@ -86,11 +87,32 @@ export function SupplierView({ user }: { user: User }) {
           <h1 className="text-2xl font-bold tracking-tight">Supplier</h1>
           <p className="text-sm text-muted-foreground mt-1">{items.length} supplier terdaftar</p>
         </div>
-        {perm.canEditSupplier && (
-          <Button onClick={() => { setEditingItem(null); setIsFormOpen(true) }}>
-            <Plus className="h-4 w-4 mr-2" /> Tambah Supplier
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportImportButtons
+            entity="supplier"
+            data={items.map((s) => ({
+              nama: s.nama,
+              kontak: s.kontak || '',
+              telepon: s.telepon || '',
+              email: s.email || '',
+              alamat: s.alamat || '',
+            }))}
+            columns={[
+              { key: 'nama', label: 'nama' },
+              { key: 'kontak', label: 'kontak' },
+              { key: 'telepon', label: 'telepon' },
+              { key: 'email', label: 'email' },
+              { key: 'alamat', label: 'alamat' },
+            ]}
+            showImport={perm.canEditSupplier}
+            onImported={loadData}
+          />
+          {perm.canEditSupplier && (
+            <Button onClick={() => { setEditingItem(null); setIsFormOpen(true) }}>
+              <Plus className="h-4 w-4 mr-2" /> Tambah Supplier
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

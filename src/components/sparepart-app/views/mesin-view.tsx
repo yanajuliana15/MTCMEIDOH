@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { Search, Plus, Edit, Trash2, Cog, MapPin, Calendar, Factory, Package } from 'lucide-react'
+import { ExportImportButtons } from '@/components/sparepart-app/export-import-buttons'
 
 const STATUS_COLORS: Record<string, string> = {
   'Aktif': 'bg-green-100 text-green-800 border-green-200',
@@ -109,11 +110,34 @@ export function MesinView({ user }: { user: User }) {
             {items.length} mesin terdaftar · {stats.aktif} aktif · {stats.maintenance} maintenance · {stats.berhenti} berhenti
           </p>
         </div>
-        {perm.canEditMesin && (
-          <Button onClick={() => { setEditingItem(null); setIsFormOpen(true) }}>
-            <Plus className="h-4 w-4 mr-2" /> Tambah Mesin
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportImportButtons
+            entity="mesin"
+            data={items.map((m) => ({
+              kode: m.kode,
+              nama: m.nama,
+              manufaktur: m.manufaktur || '',
+              lokasi: m.lokasi || '',
+              tahunInstal: m.tahunInstal ? String(m.tahunInstal) : '',
+              status: m.status,
+            }))}
+            columns={[
+              { key: 'kode', label: 'kode' },
+              { key: 'nama', label: 'nama' },
+              { key: 'manufaktur', label: 'manufaktur' },
+              { key: 'lokasi', label: 'lokasi' },
+              { key: 'tahunInstal', label: 'tahunInstal' },
+              { key: 'status', label: 'status' },
+            ]}
+            showImport={perm.canEditMesin}
+            onImported={loadData}
+          />
+          {perm.canEditMesin && (
+            <Button onClick={() => { setEditingItem(null); setIsFormOpen(true) }}>
+              <Plus className="h-4 w-4 mr-2" /> Tambah Mesin
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
