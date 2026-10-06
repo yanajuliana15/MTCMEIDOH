@@ -152,7 +152,8 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
         <div className="flex items-center gap-2">
           <ExportImportButtons
             entity="sparepart"
-            data={items.map((it) => ({
+            data={items.map((it, i) => ({
+              no: i + 1,
               kode: it.kode,
               nama: it.nama,
               kategori: it.kategori?.nama || '',
@@ -167,6 +168,7 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
               catatan: it.catatan || '',
             }))}
             columns={[
+              { key: 'no', label: 'No' },
               { key: 'kode', label: 'Kode' },
               { key: 'nama', label: 'Nama' },
               { key: 'kategori', label: 'Kategori' },
@@ -180,6 +182,11 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
               { key: 'lokasiRak', label: 'Lokasi Rak' },
               { key: 'catatan', label: 'Catatan' },
             ]}
+            meta={{
+              title: 'MTC MEIDOH - Daftar Sparepart Mesin Industri',
+              subtitle: `Diekspor: ${new Date().toLocaleString('id-ID')} | Jumlah: ${items.length} item${search ? ` | Filter: "${search}"` : ''}`,
+              summary: `TOTAL: ${items.length} item | Total Stok: ${items.reduce((s, it) => s + it.stok, 0)} unit | Stok Menipis: ${items.filter((it) => getStatusStok(it.stok, it.stokMinimum) === 'menipis').length} | Stok Habis: ${items.filter((it) => getStatusStok(it.stok, it.stokMinimum) === 'habis').length}`,
+            }}
             showImport={perm.canEditSparepart}
             onImported={loadData}
           />

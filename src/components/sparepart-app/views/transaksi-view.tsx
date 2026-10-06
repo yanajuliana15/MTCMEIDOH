@@ -82,7 +82,8 @@ export function TransaksiView({ user }: { user: User }) {
         <div className="flex items-center gap-2">
           <ExportImportButtons
             entity="transaksi"
-            data={transaksi.map((t) => ({
+            data={transaksi.map((t, i) => ({
+              no: i + 1,
               tanggal: new Date(t.tanggal).toLocaleString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric',
                 hour: '2-digit', minute: '2-digit',
@@ -96,6 +97,7 @@ export function TransaksiView({ user }: { user: User }) {
               catatan: t.catatan || '',
             }))}
             columns={[
+              { key: 'no', label: 'No' },
               { key: 'tanggal', label: 'Tanggal' },
               { key: 'kodeSparepart', label: 'Kode Sparepart' },
               { key: 'namaSparepart', label: 'Nama Sparepart' },
@@ -105,6 +107,11 @@ export function TransaksiView({ user }: { user: User }) {
               { key: 'referensi', label: 'Referensi' },
               { key: 'catatan', label: 'Catatan' },
             ]}
+            meta={{
+              title: 'MTC MEIDOH - Riwayat Transaksi Stok',
+              subtitle: `Diekspor: ${new Date().toLocaleString('id-ID')} | Jumlah: ${transaksi.length} transaksi`,
+              summary: `TOTAL: ${transaksi.length} transaksi | Masuk: ${transaksi.filter((t) => t.tipe === 'MASUK').reduce((s, t) => s + t.jumlah, 0)} unit | Keluar: ${transaksi.filter((t) => t.tipe === 'KELUAR').reduce((s, t) => s + t.jumlah, 0)} unit`,
+            }}
             showImport={canAddTransaksi}
             onImported={loadData}
           />

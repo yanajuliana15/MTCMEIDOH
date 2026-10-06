@@ -21,12 +21,14 @@ interface ExportImportButtonsProps<T extends Record<string, any>> {
   label?: string
   /** Hanya tampilkan bila true (misal permission check) */
   showImport?: boolean
+  /** Meta info untuk CSV report (judul, info, summary) */
+  meta?: { title: string; subtitle?: string; summary?: string }
   /** Callback setelah import berhasil */
   onImported?: () => void
 }
 
 export function ExportImportButtons<T extends Record<string, any>>({
-  entity, data, columns, label = 'Export', showImport = true, onImported,
+  entity, data, columns, label = 'Export', showImport = true, meta, onImported,
 }: ExportImportButtonsProps<T>) {
   const [importOpen, setImportOpen] = useState(false)
   const [importData, setImportData] = useState<Record<string, string>[] | null>(null)
@@ -40,14 +42,14 @@ export function ExportImportButtons<T extends Record<string, any>>({
       toast({ title: 'Tidak ada data', description: 'Tidak ada data untuk diekspor', variant: 'destructive' })
       return
     }
-    const csv = generateCSV(data, columns)
+    const csv = generateCSV(data, columns, meta)
     const date = new Date().toISOString().slice(0, 10)
     downloadCSV(`${entity}-export-${date}.csv`, csv)
     toast({ title: 'Export berhasil', description: `${data.length} baris diekspor ke CSV` })
   }
 
   const handleDownloadTemplate = () => {
-    // Buat CSV kosong dengan hanya header
+    // Buat CSV kosong dengan hanya header (tanpa meta, agar bisa di-import langsung)
     const sampleRow: Record<string, string> = {}
     columns.forEach((c) => { sampleRow[c.label] = '' })
     const csv = generateCSV([sampleRow], columns)

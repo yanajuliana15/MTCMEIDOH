@@ -113,7 +113,8 @@ export function MesinView({ user }: { user: User }) {
         <div className="flex items-center gap-2">
           <ExportImportButtons
             entity="mesin"
-            data={items.map((m) => ({
+            data={items.map((m, i) => ({
+              no: i + 1,
               kode: m.kode,
               nama: m.nama,
               manufaktur: m.manufaktur || '',
@@ -122,6 +123,7 @@ export function MesinView({ user }: { user: User }) {
               status: m.status,
             }))}
             columns={[
+              { key: 'no', label: 'No' },
               { key: 'kode', label: 'Kode' },
               { key: 'nama', label: 'Nama' },
               { key: 'manufaktur', label: 'Manufaktur' },
@@ -129,6 +131,11 @@ export function MesinView({ user }: { user: User }) {
               { key: 'tahunInstal', label: 'Tahun Instal' },
               { key: 'status', label: 'Status' },
             ]}
+            meta={{
+              title: 'MTC MEIDOH - Daftar Mesin Industri',
+              subtitle: `Diekspor: ${new Date().toLocaleString('id-ID')} | Jumlah: ${items.length} mesin`,
+              summary: `TOTAL: ${items.length} mesin | Aktif: ${items.filter((m) => m.status === 'Aktif').length} | Maintenance: ${items.filter((m) => m.status === 'Maintenance').length} | Berhenti: ${items.filter((m) => m.status === 'Berhenti').length}`,
+            }}
             showImport={perm.canEditMesin}
             onImported={loadData}
           />

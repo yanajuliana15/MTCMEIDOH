@@ -90,20 +90,29 @@ export function SupplierView({ user }: { user: User }) {
         <div className="flex items-center gap-2">
           <ExportImportButtons
             entity="supplier"
-            data={items.map((s) => ({
+            data={items.map((s, i) => ({
+              no: i + 1,
               nama: s.nama,
               kontak: s.kontak || '',
               telepon: s.telepon || '',
               email: s.email || '',
               alamat: s.alamat || '',
+              jumlahSparepart: s._count?.spareparts || 0,
             }))}
             columns={[
+              { key: 'no', label: 'No' },
               { key: 'nama', label: 'Nama' },
               { key: 'kontak', label: 'Kontak' },
               { key: 'telepon', label: 'Telepon' },
               { key: 'email', label: 'Email' },
               { key: 'alamat', label: 'Alamat' },
+              { key: 'jumlahSparepart', label: 'Jumlah Sparepart' },
             ]}
+            meta={{
+              title: 'MTC MEIDOH - Daftar Supplier',
+              subtitle: `Diekspor: ${new Date().toLocaleString('id-ID')} | Jumlah: ${items.length} supplier`,
+              summary: `TOTAL: ${items.length} supplier | Total Sparepart Dipasok: ${items.reduce((sum, s) => sum + (s._count?.spareparts || 0), 0)}`,
+            }}
             showImport={perm.canEditSupplier}
             onImported={loadData}
           />

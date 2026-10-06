@@ -1,15 +1,34 @@
 // Helper untuk generate & parse CSV
 
+interface CSVMeta {
+  /** Judul utama (baris 1) */
+  title?: string
+  /** Info tambahan (baris 2) — tanggal export, jumlah data, filter aktif */
+  subtitle?: string
+  /** Baris ringkasan di akhir (misal: "TOTAL: 15 item | Total Stok: 280") */
+  summary?: string
+}
+
 /**
  * Generate CSV string dari array of objects.
- * - Header diambil dari parameter `headers` (label)
- * - Nilai di-escape: bila mengandung koma, quote, atau newline → dibungkus quote
- * - Angka diformat dengan separator ribuan (titik) untuk readabilitas di Excel
- * - Tidak ada BOM di sini (BOM ditambahkan saat download)
+ *
+ * Format CSV "report" yang enak dilihat di Excel:
+ * - Baris 1: Judul (MTC MEIDOH - Export Sparepart)
+ * - Baris 2: Info (Tanggal, jumlah data, filter)
+ * - Baris 3: (kosong sebagai pemisah)
+ * - Baris 4: Header kolom
+ * - Baris 5+: Data
+ * - Baris terakhir: (kosong) + Summary row
+ *
+ * Jika `meta` tidak diisi, generate CSV standard (header di baris 1).
+ *
+ * Angka tetap sebagai number (tanpa thousand separator) agar Excel kenali.
+ * Text yang mengandung koma/quote/newline di-escape otomatis.
  */
 export function generateCSV<T extends Record<string, any>>(
   rows: T[],
-  headers?: { key: keyof T; label: string }[]
+  headers?: { key: keyof T; label: string }[],
+  meta?: CSVMeta
 ): string {
   if (rows.length === 0 && !headers) return ''
 
@@ -17,11 +36,34 @@ export function generateCSV<T extends Record<string, any>>(
     ? headers
     : Object.keys(rows[0] || {}).map((k) => ({ key: k as keyof T, label: k }))
 
-  const headerLine = cols.map((c) => escapeCSV(c.label)).join(',')
-  const dataLines = rows.map((row) =>
-    cols.map((c) => escapeCSV(formatValue(row[c.key]))).join(',')
-  )
-  return [headerLine, ...dataLines].join('\r\n')
+  const lines: string[] = []
+
+  // Baris meta (judul + info) — hanya jika meta diisi
+  if (meta?.title) {
+    lines.push(escapeCSV(meta.title))
+  }
+  if (meta?.subtitle) {
+    lines.push(escapeCSV(meta.subtitle))
+  }
+  if (meta?.title || meta?.subtitle) {
+    lines.push('') // baris kosong sebagai pemisah
+  }
+
+  // Header row
+  lines.push(cols.map((c) => escapeCSV(c.label)).join(','))
+
+  // Data rows
+  for (const row of rows) {
+    lines.push(cols.map((c) => escapeCSV(formatValue(row[c.key]))).join(','))
+  }
+
+  // Summary row di akhir — hanya jika meta diisi
+  if (meta?.summary) {
+    lines.push('') // baris kosong sebelum summary
+    lines.push(escapeCSV(meta.summary))
+  }
+
+  return lines.join('\r\n')
 }
 
 /**
@@ -59,22 +101,55 @@ function escapeCSV(value: any): string {
 
 /**
  * Parse CSV string menjadi array of objects.
- * - Baris pertama dianggap header
+ *
+ * Smart parser:
+ * - Skip baris meta (judul, info, baris kosong) di atas header
+ * - Deteksi baris header: baris yang punya >= 3 field valid (bukan baris info/summary)
+ * - Skip baris summary di bawah (baris yang dimulai dengan "TOTAL" atau "Ringkasan")
  * - Mendukung quote escaping & newline dalam field (bila field di-quote)
  */
 export function parseCSV(text: string): Record<string, string>[] {
   // Normalisasi line ending
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-  const rows = splitCSVLines(normalized)
-  if (rows.length < 2) return []
+  const allRows = splitCSVLines(normalized)
+  if (allRows.length < 2) return []
 
-  const headers = rows[0].map((h) => h.trim())
+  // Cari baris header: baris yang punya >= 3 field non-kosong
+  // dan bukan baris yang dimulai dengan keyword meta/summary
+  let headerRowIndex = -1
+  for (let i = 0; i < allRows.length; i++) {
+    const row = allRows[i]
+    const nonEmptyCells = row.filter((c) => c.trim() !== '')
+    // Skip baris kosong
+    if (nonEmptyCells.length === 0) continue
+    // Skip baris summary (TOTAL, Ringkasan, dll)
+    const firstCell = (row[0] || '').trim().toUpperCase()
+    if (firstCell.startsWith('TOTAL') || firstCell.startsWith('RINGKASAN') || firstCell.startsWith('SUMMARY')) continue
+    // Skip baris meta (judul) — biasanya 1 cell panjang, atau berisi "MTC MEIDOH"
+    if (i === 0 && nonEmptyCells.length === 1) continue
+    // Skip baris subtitle (Tanggal:, Jumlah:, Filter:, Diekspor:)
+    if (nonEmptyCells.length <= 2 && (firstCell.includes('TANGGAL') || firstCell.includes('JUMLAH') || firstCell.includes('FILTER') || firstCell.includes('DIEKSPOR') || firstCell.includes('|'))) continue
+    // Kandidat header: punya >= 3 field
+    if (nonEmptyCells.length >= 3) {
+      headerRowIndex = i
+      break
+    }
+  }
+
+  // Fallback: kalau tidak ketemu, pakai baris pertama sebagai header
+  if (headerRowIndex === -1) headerRowIndex = 0
+
+  const headers = allRows[headerRowIndex].map((h) => h.trim())
   const result: Record<string, string>[] = []
 
-  for (let i = 1; i < rows.length; i++) {
-    const cells = rows[i]
+  for (let i = headerRowIndex + 1; i < allRows.length; i++) {
+    const cells = allRows[i]
     // Skip baris kosong
     if (cells.length === 1 && cells[0] === '') continue
+    // Skip baris summary
+    const firstCell = (cells[0] || '').trim().toUpperCase()
+    if (firstCell.startsWith('TOTAL') || firstCell.startsWith('RINGKASAN') || firstCell.startsWith('SUMMARY')) continue
+
     const obj: Record<string, string> = {}
     headers.forEach((h, idx) => {
       obj[h] = (cells[idx] ?? '').trim()
