@@ -3,10 +3,11 @@ import { db } from '@/lib/db'
 
 export async function GET() {
   try {
-    const [totalSparepart, totalMesin, totalKategori, allSparepart, recentTransaksi, mesinStatus] =
+    const [totalSparepart, totalMesin, totalSupplier, totalKategori, allSparepart, recentTransaksi, mesinStatus] =
       await Promise.all([
         db.sparepart.count(),
         db.mesin.count(),
+        db.supplier.count(),
         db.kategori.count(),
         db.sparepart.findMany({
           select: { stok: true, stokMinimum: true, hargaBeli: true, hargaJual: true, satuan: true, kategoriId: true, kategori: true },
@@ -39,6 +40,7 @@ export async function GET() {
     return NextResponse.json({
       totalSparepart,
       totalMesin,
+      totalSupplier,
       totalKategori,
       stokMenipis,
       stokHabis,

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { Mesin, Sparepart, User } from '@/lib/types'
 import { formatTanggalShort, ROLE_PERMISSIONS } from '@/lib/types'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,20 +11,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Search, Plus, Edit, Trash2, Cog, MapPin, Calendar, Factory, Package, X, ChevronRight } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Cog, MapPin, Calendar, Factory, Package } from 'lucide-react'
 
-const STATUS_DOT: Record<string, string> = {
-  'Aktif': 'bg-emerald-500',
-  'Maintenance': 'bg-amber-500',
-  'Berhenti': 'bg-red-500',
-}
-const STATUS_BG: Record<string, string> = {
-  'Aktif': 'bg-emerald-50 text-emerald-600',
-  'Maintenance': 'bg-amber-50 text-amber-600',
-  'Berhenti': 'bg-red-50 text-red-600',
+const STATUS_COLORS: Record<string, string> = {
+  'Aktif': 'bg-green-100 text-green-800 border-green-200',
+  'Maintenance': 'bg-amber-100 text-amber-800 border-amber-200',
+  'Berhenti': 'bg-red-100 text-red-800 border-red-200',
 }
 
 export function MesinView({ user }: { user: User }) {
@@ -52,8 +47,7 @@ export function MesinView({ user }: { user: User }) {
         fetch('/api/sparepart'),
       ])
       const [ms, sp] = await Promise.all([msRes.json(), spRes.json()])
-      setItems(ms)
-      setSparepartList(sp)
+      setItems(ms); setSparepartList(sp)
     } catch (e: any) {
       toast({ title: 'Error', description: e.message, variant: 'destructive' })
     } finally {
@@ -75,7 +69,7 @@ export function MesinView({ user }: { user: User }) {
         method, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Gagal simpan') }
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Gagal menyimpan') }
       toast({ title: 'Berhasil', description: editingItem ? 'Mesin diperbarui' : 'Mesin ditambahkan' })
       setIsFormOpen(false); setEditingItem(null); loadData()
     } catch (e: any) {
@@ -90,7 +84,7 @@ export function MesinView({ user }: { user: User }) {
     setSubmitting(true)
     try {
       const res = await fetch(`/api/mesin/${deleteItem.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Gagal hapus')
+      if (!res.ok) throw new Error('Gagal menghapus mesin')
       toast({ title: 'Berhasil', description: 'Mesin dihapus' })
       setDeleteItem(null); loadData()
     } catch (e: any) {
@@ -107,98 +101,107 @@ export function MesinView({ user }: { user: User }) {
   }
 
   return (
-    <div className="pb-24">
-      <div className="sticky top-[53px] z-20 bg-white/95 backdrop-blur-md border-b border-slate-200">
-        <div className="p-3 max-w-5xl mx-auto space-y-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Cari mesin..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10 rounded-xl bg-slate-50 border-slate-200"
-            />
-          </div>
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-            {[
-              { id: 'all', label: 'Semua', count: items.length },
-              { id: 'Aktif', label: 'Aktif', count: stats.aktif },
-              { id: 'Maintenance', label: 'Maintenance', count: stats.maintenance },
-              { id: 'Berhenti', label: 'Berhenti', count: stats.berhenti },
-            ].map((chip) => (
-              <button
-                key={chip.id}
-                onClick={() => setFilterStatus(chip.id)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                  filterStatus === chip.id ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {chip.label} <span className="opacity-70">({chip.count})</span>
-              </button>
-            ))}
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Mesin Industri</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {items.length} mesin terdaftar · {stats.aktif} aktif · {stats.maintenance} maintenance · {stats.berhenti} berhenti
+          </p>
         </div>
-      </div>
-
-      <div className="p-3 space-y-2 max-w-5xl mx-auto">
-        {loading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-16">
-            <Cog className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm font-medium text-slate-700">Belum ada mesin</p>
-          </div>
-        ) : (
-          items.map((m) => (
-            <Card
-              key={m.id}
-              className="border border-slate-200 shadow-sm rounded-2xl overflow-hidden cursor-pointer hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99]"
-              onClick={() => setDetailItem(m)}
-            >
-              <div className="flex items-center gap-3 p-3">
-                <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${STATUS_BG[m.status] || 'bg-slate-100 text-slate-600'}`}>
-                  <Cog className="h-5 w-5" />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <Badge variant="outline" className="font-mono text-[9px] py-0 px-1.5 h-4 border-slate-200 text-slate-500">{m.kode}</Badge>
-                    <div className="flex items-center gap-1">
-                      <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[m.status]}`} />
-                      <span className="text-[10px] text-slate-500">{m.status}</span>
-                    </div>
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900 truncate">{m.nama}</div>
-                  <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 truncate">
-                    {m.manufaktur && <span className="truncate">{m.manufaktur}</span>}
-                    {m.manufaktur && m.lokasi && <span>·</span>}
-                    {m.lokasi && <span className="truncate">{m.lokasi}</span>}
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <div className="text-xs font-bold text-slate-900">{m.spareparts?.length || 0}</div>
-                  <div className="text-[9px] text-slate-400">part</div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-300 shrink-0" />
-              </div>
-            </Card>
-          ))
+        {perm.canEditMesin && (
+          <Button onClick={() => { setEditingItem(null); setIsFormOpen(true) }}>
+            <Plus className="h-4 w-4 mr-2" /> Tambah Mesin
+          </Button>
         )}
       </div>
 
-      {perm.canEditMesin && (
-        <button
-          onClick={() => { setEditingItem(null); setIsFormOpen(true) }}
-          className="fixed bottom-20 md:bottom-6 right-4 z-30 h-12 w-12 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/30 flex items-center justify-center active:scale-95 transition-all"
-          aria-label="Tambah Mesin"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Cari kode, nama, atau manufaktur..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            </div>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="Aktif">Aktif</SelectItem>
+                <SelectItem value="Maintenance">Maintenance</SelectItem>
+                <SelectItem value="Berhenti">Berhenti</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse"><CardContent className="h-48" /></Card>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <Cog className="h-12 w-12 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium">Belum ada mesin terdaftar</p>
+            <p className="text-xs text-muted-foreground mt-1">Klik "Tambah Mesin" untuk memulai</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {items.map((m) => (
+            <Card key={m.id} className="group hover:shadow-md transition-shadow cursor-pointer" onClick={() => setDetailItem(m)}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-md bg-muted p-2">
+                      <Cog className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <Badge variant="outline" className="font-mono text-[10px]">{m.kode}</Badge>
+                      <div className="text-xs text-muted-foreground mt-0.5">{m.manufaktur || 'Tanpa manufaktur'}</div>
+                    </div>
+                  </div>
+                  <Badge className={`text-[10px] ${STATUS_COLORS[m.status]}`} variant="outline">{m.status}</Badge>
+                </div>
+
+                <div><h3 className="text-sm font-semibold leading-tight">{m.nama}</h3></div>
+
+                <div className="space-y-1.5 text-xs">
+                  {m.lokasi && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <MapPin className="h-3 w-3" /> {m.lokasi}
+                    </div>
+                  )}
+                  {m.tahunInstal && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Calendar className="h-3 w-3" /> Dipasang {m.tahunInstal}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Package className="h-3 w-3" /> {m.spareparts?.length || 0} sparepart kompatibel
+                  </div>
+                </div>
+
+                {perm.canEditMesin && (
+                  <div className="flex justify-end gap-1 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingItem(m); setIsFormOpen(true) }}>
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                    {perm.canDeleteMesin && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteItem(m)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       <MesinForm
@@ -212,23 +215,63 @@ export function MesinView({ user }: { user: User }) {
       />
 
       <Sheet open={!!detailItem} onOpenChange={(open) => !open && setDetailItem(null)}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto p-0">
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           {detailItem && (
-            <MesinDetail
-              item={detailItem}
-              onClose={() => setDetailItem(null)}
-              onEdit={perm.canEditMesin ? () => {
-                setDetailItem(null)
-                setEditingItem(detailItem)
-                setIsFormOpen(true)
-              } : undefined}
-            />
+            <>
+              <SheetHeader>
+                <SheetTitle className="text-left">{detailItem.nama}</SheetTitle>
+                <SheetDescription className="text-left flex items-center gap-2">
+                  <Badge variant="outline" className="font-mono">{detailItem.kode}</Badge>
+                  <Badge className={`text-[10px] ${STATUS_COLORS[detailItem.status]}`} variant="outline">{detailItem.status}</Badge>
+                </SheetDescription>
+              </SheetHeader>
+              <div className="px-4 pb-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Tahun Instalasi</div>
+                    <div className="text-lg font-bold">{detailItem.tahunInstal || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Jumlah Sparepart</div>
+                    <div className="text-lg font-bold">{detailItem.spareparts?.length || 0}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">Detail Mesin</div>
+                  <div className="space-y-2 text-sm">
+                    <Row label="Manufaktur" value={detailItem.manufaktur || '-'} icon={Factory} />
+                    <Row label="Lokasi" value={detailItem.lokasi || '-'} icon={MapPin} />
+                  </div>
+                </div>
+
+                {detailItem.spareparts && detailItem.spareparts.length > 0 && (
+                  <div>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                      Daftar Sparepart Kompatibel
+                    </div>
+                    <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                      {detailItem.spareparts.map(({ sparepart: sp }) => (
+                        <div key={sp.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                          <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{sp.nama}</div>
+                            <div className="text-xs text-muted-foreground">{sp.kode}</div>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">{sp.stok} {sp.satuan}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </SheetContent>
       </Sheet>
 
       <AlertDialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
-        <AlertDialogContent className="rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Mesin?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -237,8 +280,8 @@ export function MesinView({ user }: { user: User }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={submitting} className="bg-red-600 hover:bg-red-700 rounded-lg">
-              {submitting ? 'Menghapus...' : 'Hapus'}
+            <AlertDialogAction onClick={handleDelete} disabled={submitting} className="bg-destructive hover:bg-destructive/90">
+              {submitting ? 'Menghapus...' : 'Hapus Permanen'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -247,89 +290,13 @@ export function MesinView({ user }: { user: User }) {
   )
 }
 
-function MesinDetail({ item, onClose, onEdit }: { item: Mesin; onClose: () => void; onEdit?: () => void }) {
-  return (
-    <>
-      <div className="bg-slate-900 text-white p-5 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]" style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
-          backgroundSize: '16px 16px',
-        }} />
-        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-orange-500/20 blur-2xl" />
-
-        <div className="relative">
-          <div className="flex items-center justify-between mb-3">
-            <Badge className="bg-white/10 text-white border-0 font-mono text-[10px] hover:bg-white/10">{item.kode}</Badge>
-            <button onClick={onClose} className="text-white/70 hover:text-white">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <h2 className="text-lg font-bold leading-tight">{item.nama}</h2>
-          <div className="inline-flex items-center gap-1.5 mt-2 px-2 py-1 rounded-full bg-white/10 text-xs">
-            <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[item.status]}`} />
-            {item.status}
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-xl bg-slate-50 p-3">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Tahun Instalasi</div>
-            <div className="text-base font-bold text-slate-900">{item.tahunInstal || '-'}</div>
-          </div>
-          <div className="rounded-xl bg-slate-50 p-3">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Total Sparepart</div>
-            <div className="text-base font-bold text-slate-900">{item.spareparts?.length || 0}</div>
-          </div>
-        </div>
-
-        <div>
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Informasi</div>
-          <div className="space-y-2 text-sm">
-            <Row label="Manufaktur" value={item.manufaktur || '-'} icon={Factory} />
-            <Row label="Lokasi" value={item.lokasi || '-'} icon={MapPin} />
-            <Row label="Dibuat" value={formatTanggalShort(item.createdAt)} icon={Calendar} />
-          </div>
-        </div>
-
-        {item.spareparts && item.spareparts.length > 0 && (
-          <div>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-              Sparepart Kompatibel ({item.spareparts.length})
-            </div>
-            <div className="space-y-1.5">
-              {item.spareparts.map(({ sparepart: sp }) => (
-                <div key={sp.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2.5 text-sm">
-                  <Package className="h-4 w-4 text-slate-400 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-slate-900 truncate">{sp.nama}</div>
-                    <div className="text-[10px] text-slate-500">{sp.kode}</div>
-                  </div>
-                  <Badge variant="outline" className="text-[9px]">{sp.stok} {sp.satuan}</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {onEdit && (
-          <Button className="w-full rounded-xl h-11 bg-slate-900 hover:bg-slate-800" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" /> Edit Mesin
-          </Button>
-        )}
-      </div>
-    </>
-  )
-}
-
 function Row({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
   return (
     <div className="flex justify-between items-center">
-      <span className="text-slate-500 flex items-center gap-1.5">
+      <span className="text-muted-foreground flex items-center gap-1.5">
         <Icon className="h-3.5 w-3.5" /> {label}
       </span>
-      <span className="font-medium text-slate-900 text-right">{value}</span>
+      <span className="font-medium text-right">{value}</span>
     </div>
   )
 }
@@ -359,21 +326,21 @@ function MesinForm({ open, onOpenChange, editingItem, sparepartList, onSubmit, s
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingItem ? 'Edit Mesin' : 'Tambah Mesin'}</DialogTitle>
-          <DialogDescription>{editingItem ? 'Perbarui informasi mesin' : 'Daftarkan mesin baru'}</DialogDescription>
+          <DialogTitle>{editingItem ? 'Edit Mesin' : 'Tambah Mesin Baru'}</DialogTitle>
+          <DialogDescription>{editingItem ? 'Perbarui informasi mesin industri' : 'Daftarkan mesin industri baru'}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Kode *</Label>
-              <Input value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value })} placeholder="MCH-001" required disabled={!!editingItem} className="h-10" />
+            <div className="space-y-2">
+              <Label htmlFor="m-kode">Kode Mesin *</Label>
+              <Input id="m-kode" value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value })} placeholder="MCH-001" required disabled={!!editingItem} />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Status</Label>
+            <div className="space-y-2">
+              <Label htmlFor="m-status">Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Aktif">Aktif</SelectItem>
                   <SelectItem value="Maintenance">Maintenance</SelectItem>
@@ -383,44 +350,48 @@ function MesinForm({ open, onOpenChange, editingItem, sparepartList, onSubmit, s
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">Nama Mesin *</Label>
-            <Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Pompa Sentrifugal 1A" required className="h-10" />
+          <div className="space-y-2">
+            <Label htmlFor="m-nama">Nama Mesin *</Label>
+            <Input id="m-nama" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Pompa Sentrifugal Sentral 1A" required />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Manufaktur</Label>
-              <Input value={form.manufaktur} onChange={(e) => setForm({ ...form, manufaktur: e.target.value })} placeholder="Grundfos" className="h-10" />
+            <div className="space-y-2">
+              <Label htmlFor="m-manufaktur">Manufaktur</Label>
+              <Input id="m-manufaktur" value={form.manufaktur} onChange={(e) => setForm({ ...form, manufaktur: e.target.value })} placeholder="Grundfos" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Tahun Instalasi</Label>
-              <Input type="number" min="1900" max="2099" value={form.tahunInstal} onChange={(e) => setForm({ ...form, tahunInstal: e.target.value })} placeholder="2019" className="h-10" />
+            <div className="space-y-2">
+              <Label htmlFor="m-tahun">Tahun Instalasi</Label>
+              <Input id="m-tahun" type="number" min="1900" max="2099" value={form.tahunInstal} onChange={(e) => setForm({ ...form, tahunInstal: e.target.value })} placeholder="2019" />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">Lokasi</Label>
-            <Input value={form.lokasi} onChange={(e) => setForm({ ...form, lokasi: e.target.value })} placeholder="Pabrik A - Pump Station" className="h-10" />
+          <div className="space-y-2">
+            <Label htmlFor="m-lokasi">Lokasi</Label>
+            <Input id="m-lokasi" value={form.lokasi} onChange={(e) => setForm({ ...form, lokasi: e.target.value })} placeholder="Pabrik A - Pump Station 1" />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">Sparepart Kompatibel</Label>
-            <div className="border border-slate-200 rounded-xl p-2 max-h-32 overflow-y-auto space-y-1">
-              {sparepartList.map((sp: Sparepart) => (
-                <label key={sp.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1">
-                  <input type="checkbox" checked={form.sparepartIds.includes(sp.id)} onChange={() => toggleSparepart(sp.id)} className="rounded" />
-                  <span className="flex-1 truncate text-slate-700">{sp.nama}</span>
-                  <Badge variant="outline" className="text-[9px]">{sp.kode}</Badge>
-                </label>
-              ))}
+          <div className="space-y-2">
+            <Label>Sparepart Kompatibel</Label>
+            <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-1.5">
+              {sparepartList.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Belum ada sparepart terdaftar</p>
+              ) : (
+                sparepartList.map((sp: Sparepart) => (
+                  <label key={sp.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded px-2 py-1">
+                    <input type="checkbox" checked={form.sparepartIds.includes(sp.id)} onChange={() => toggleSparepart(sp.id)} className="rounded" />
+                    <span className="flex-1 truncate">{sp.nama}</span>
+                    <Badge variant="outline" className="text-[10px]">{sp.kode}</Badge>
+                  </label>
+                ))
+              )}
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Batal</Button>
-            <Button type="submit" disabled={submitting} className="bg-slate-900 hover:bg-slate-800 rounded-lg">
-              {submitting ? 'Menyimpan...' : editingItem ? 'Simpan' : 'Tambah'}
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Menyimpan...' : editingItem ? 'Simpan Perubahan' : 'Tambah Mesin'}
             </Button>
           </DialogFooter>
         </form>

@@ -19,6 +19,16 @@ export interface Kategori {
   _count?: { spareparts: number }
 }
 
+export interface Supplier {
+  id: string
+  nama: string
+  kontak?: string | null
+  telepon?: string | null
+  email?: string | null
+  alamat?: string | null
+  _count?: { spareparts: number }
+}
+
 export interface Mesin {
   id: string
   kode: string
@@ -45,6 +55,8 @@ export interface SparepartSimple {
 export interface Sparepart extends SparepartSimple {
   kategoriId?: string | null
   kategori?: Kategori | null
+  supplierId?: string | null
+  supplier?: Supplier | null
   lokasiRak?: string | null
   catatan?: string | null
   gambar?: string | null
@@ -70,6 +82,7 @@ export interface TransaksiStok {
 export interface DashboardData {
   totalSparepart: number
   totalMesin: number
+  totalSupplier: number
   totalKategori: number
   stokMenipis: number
   stokHabis: number
@@ -88,7 +101,7 @@ export interface DashboardData {
   }>
 }
 
-export type ViewName = 'dashboard' | 'sparepart' | 'mesin' | 'transaksi'
+export type ViewName = 'dashboard' | 'sparepart' | 'mesin' | 'supplier' | 'transaksi'
 
 // Permission matrix per role
 export const ROLE_PERMISSIONS: Record<UserRole, {
@@ -96,6 +109,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
   canDeleteSparepart: boolean
   canEditMesin: boolean
   canDeleteMesin: boolean
+  canEditSupplier: boolean
+  canDeleteSupplier: boolean
   canTransaksiKeluar: boolean
   canTransaksiMasuk: boolean
 }> = {
@@ -104,6 +119,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canDeleteSparepart: true,
     canEditMesin: true,
     canDeleteMesin: true,
+    canEditSupplier: true,
+    canDeleteSupplier: true,
     canTransaksiKeluar: true,
     canTransaksiMasuk: true,
   },
@@ -112,6 +129,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canDeleteSparepart: false,
     canEditMesin: false,
     canDeleteMesin: false,
+    canEditSupplier: true,
+    canDeleteSupplier: false,
     canTransaksiKeluar: true,
     canTransaksiMasuk: true,
   },
@@ -120,6 +139,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canDeleteSparepart: false,
     canEditMesin: false,
     canDeleteMesin: false,
+    canEditSupplier: false,
+    canDeleteSupplier: false,
     canTransaksiKeluar: true,
     canTransaksiMasuk: false,
   },

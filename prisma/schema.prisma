@@ -12,7 +12,7 @@ model User {
   id        String   @id @default(cuid())
   nama      String
   username  String   @unique
-  password  String   // plain text untuk demo (sebaiknya hash di production)
+  password  String
   role      String   @default("OPERATOR") // ADMIN / OPERATOR / GUDANG
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -34,10 +34,22 @@ model Mesin {
   lokasi      String?
   manufaktur  String?
   tahunInstal Int?
-  status      String           @default("Aktif") // Aktif / Maintenance / Berhenti
+  status      String           @default("Aktif")
   spareparts  MesinSparepart[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+}
+
+model Supplier {
+  id         String        @id @default(cuid())
+  nama       String
+  kontak     String?
+  telepon    String?
+  email      String?
+  alamat     String?
+  spareparts Sparepart[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 }
 
 model Sparepart {
@@ -46,12 +58,14 @@ model Sparepart {
   nama          String
   kategoriId    String?
   kategori      Kategori?           @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
-  satuan        String             @default("pcs") // pcs, set, unit, liter, meter
+  supplierId    String?
+  supplier      Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  satuan        String             @default("pcs")
   stok          Int                @default(0)
   stokMinimum   Int                @default(0)
   hargaBeli     Float              @default(0)
   hargaJual     Float              @default(0)
-  lokasiRak     String?            // Lokasi penyimpanan di gudang
+  lokasiRak     String?
   catatan       String?
   gambar        String?
   mesin         MesinSparepart[]
@@ -60,7 +74,6 @@ model Sparepart {
   updatedAt     DateTime           @updatedAt
 }
 
-// Many-to-many: Sparepart compatible with multiple Mesin
 model MesinSparepart {
   id          String     @id @default(cuid())
   mesinId     String
@@ -78,9 +91,9 @@ model TransaksiStok {
   sparepart   Sparepart  @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
   tipe        String     // MASUK / KELUAR
   jumlah      Int
-  referensi   String?    // nomor PO / work order
+  referensi   String?
   catatan     String?
-  userId      String?    // siapa yang mencatat
+  userId      String?
   tanggal     DateTime   @default(now())
   createdAt   DateTime   @default(now())
 }
