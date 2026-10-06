@@ -1,0 +1,128 @@
+// Tipe data untuk aplikasi sparepart mesin industri
+
+export type StatusMesin = 'Aktif' | 'Maintenance' | 'Berhenti'
+export type TipeTransaksi = 'MASUK' | 'KELUAR'
+export type StatusStok = 'aman' | 'menipis' | 'habis'
+
+export interface Kategori {
+  id: string
+  nama: string
+  deskripsi?: string | null
+  _count?: { spareparts: number }
+}
+
+export interface Supplier {
+  id: string
+  nama: string
+  kontak?: string | null
+  telepon?: string | null
+  email?: string | null
+  alamat?: string | null
+  _count?: { spareparts: number }
+}
+
+export interface Mesin {
+  id: string
+  kode: string
+  nama: string
+  lokasi?: string | null
+  manufaktur?: string | null
+  tahunInstal?: number | null
+  status: StatusMesin
+  spareparts?: Array<{ sparepart: SparepartSimple }>
+  createdAt: string
+}
+
+export interface SparepartSimple {
+  id: string
+  kode: string
+  nama: string
+  satuan: string
+  stok: number
+  stokMinimum: number
+  hargaBeli: number
+  hargaJual: number
+}
+
+export interface Sparepart extends SparepartSimple {
+  kategoriId?: string | null
+  kategori?: Kategori | null
+  supplierId?: string | null
+  supplier?: Supplier | null
+  lokasiRak?: string | null
+  catatan?: string | null
+  gambar?: string | null
+  mesin?: Array<{ mesin: Mesin }>
+  transaksi?: TransaksiStok[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TransaksiStok {
+  id: string
+  sparepartId: string
+  sparepart?: SparepartSimple
+  tipe: TipeTransaksi
+  jumlah: number
+  referensi?: string | null
+  catatan?: string | null
+  tanggal: string
+  createdAt: string
+}
+
+export interface DashboardData {
+  totalSparepart: number
+  totalMesin: number
+  totalSupplier: number
+  totalKategori: number
+  stokMenipis: number
+  stokHabis: number
+  stokAman: number
+  totalNilaiStok: number
+  totalNilaiJual: number
+  distribusiKategori: Array<{ nama: string; jumlah: number; nilai: number }>
+  statusMesin: Array<{ status: string; jumlah: number }>
+  recentTransaksi: Array<{
+    id: string
+    tipe: TipeTransaksi
+    jumlah: number
+    referensi?: string | null
+    tanggal: string
+    sparepart: { kode: string; nama: string; satuan: string }
+  }>
+}
+
+export type ViewName = 'dashboard' | 'sparepart' | 'mesin' | 'supplier' | 'transaksi'
+
+export function formatRupiah(num: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num)
+}
+
+export function formatTanggal(tgl: string): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(tgl))
+}
+
+export function formatTanggalShort(tgl: string): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(tgl))
+}
+
+export function getStatusStok(stok: number, min: number): StatusStok {
+  if (stok === 0) return 'habis'
+  if (stok <= min) return 'menipis'
+  return 'aman'
+}
