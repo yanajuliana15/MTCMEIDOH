@@ -98,11 +98,11 @@ export function SupplierView({ user }: { user: User }) {
               alamat: s.alamat || '',
             }))}
             columns={[
-              { key: 'nama', label: 'nama' },
-              { key: 'kontak', label: 'kontak' },
-              { key: 'telepon', label: 'telepon' },
-              { key: 'email', label: 'email' },
-              { key: 'alamat', label: 'alamat' },
+              { key: 'nama', label: 'Nama' },
+              { key: 'kontak', label: 'Kontak' },
+              { key: 'telepon', label: 'Telepon' },
+              { key: 'email', label: 'Email' },
+              { key: 'alamat', label: 'Alamat' },
             ]}
             filters={{ search }}
             showImport={perm.canEditSupplier}

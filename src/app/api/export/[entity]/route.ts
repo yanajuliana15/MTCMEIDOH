@@ -165,15 +165,27 @@ function fillDataRow(ws: ExcelJS.Worksheet, rowIndex: number, data: Record<strin
 }
 
 // Alternating row color untuk readability
+// Skip cells yang sudah punya fill (misal status color) agar tidak ditimpa
 function applyAlternatingRows(ws: ExcelJS.Worksheet, startRow: number, endRow: number, numCols: number) {
   for (let r = startRow; r <= endRow; r++) {
     const isEven = (r - startRow) % 2 === 1
     if (isEven) {
       for (let c = 1; c <= numCols; c++) {
         const cell = ws.getRow(r).getCell(c)
+        // Skip jika cell sudah punya fill solid (misal status color)
+        if (cell.fill && (cell.fill as any).patternType === 'solid') continue
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } } // slate-50
       }
     }
+  }
+}
+
+// Helper: fill semua cell di summary row dengan background gray + border
+function fillSummaryRowCells(ws: ExcelJS.Worksheet, rowIndex: number, numCols: number, fgColor = 'FFE5E7EB') {
+  for (let c = 1; c <= numCols; c++) {
+    const cell = ws.getRow(rowIndex).getCell(c)
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fgColor } }
+    cell.border = BORDER
   }
 }
 
@@ -250,19 +262,19 @@ async function buildSparepartSheet(wb: ExcelJS.Workbook, filters: any) {
 
   // Summary row di bawah
   const summaryRow = startRow + spareparts.length + 1
+  // Fill semua cell di summary row dengan gray background
+  fillSummaryRowCells(ws, summaryRow, columns.length)
   ws.mergeCells(summaryRow, 1, summaryRow, 5)
   const sumCell = ws.getCell(summaryRow, 1)
   sumCell.value = 'TOTAL'
   sumCell.font = { bold: true, size: 11, name: 'Calibri' }
   sumCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
-  sumCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }
 
   // Total stok (kolom 6 = stok)
   const sumStokCell = ws.getCell(summaryRow, 6)
   sumStokCell.value = spareparts.reduce((s, sp) => s + sp.stok, 0)
   sumStokCell.font = { bold: true, size: 11, name: 'Calibri' }
   sumStokCell.numFmt = '#,##0'
-  sumStokCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }
   sumStokCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
 
   // Total nilai (kolom 11 = nilaiStok)
@@ -270,7 +282,6 @@ async function buildSparepartSheet(wb: ExcelJS.Workbook, filters: any) {
   sumNilaiCell.value = spareparts.reduce((s, sp) => s + sp.stok * sp.hargaBeli, 0)
   sumNilaiCell.font = { bold: true, size: 11, name: 'Calibri' }
   sumNilaiCell.numFmt = '"Rp"#,##0'
-  sumNilaiCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }
   sumNilaiCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
 
   applyAlternatingRows(ws, startRow, startRow + spareparts.length - 1, columns.length)
@@ -320,7 +331,7 @@ async function buildMesinSheet(wb: ExcelJS.Workbook, filters: any) {
       nama: m.nama,
       manufaktur: m.manufaktur || '-',
       lokasi: m.lokasi || '-',
-      tahunInstal: m.tahunInstal || '-',
+      tahunInstal: m.tahunInstal || '',
       status: m.status,
       jumlahPart: m.spareparts?.length || 0,
       sparepartList: m.spareparts?.map((s) => s.sparepart.kode).join(', ') || '-',
@@ -436,16 +447,12 @@ async function buildTransaksiSheet(wb: ExcelJS.Workbook, filters: any) {
 
   // Summary row
   const summaryRow = startRow + transaksi.length + 1
+  fillSummaryRowCells(ws, summaryRow, columns.length)
   ws.mergeCells(summaryRow, 1, summaryRow, 5)
   const sumCell = ws.getCell(summaryRow, 1)
   sumCell.value = `TOTAL — Masuk: ${totalMasuk}  ·  Keluar: ${totalKeluar}  ·  Net: ${totalMasuk - totalKeluar}`
   sumCell.font = { bold: true, size: 11, name: 'Calibri' }
   sumCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
-  sumCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }
-  for (let c = 1; c <= columns.length; c++) {
-    const cell = ws.getCell(summaryRow, c)
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } }
-  }
 
   applyAlternatingRows(ws, startRow, startRow + transaksi.length - 1, columns.length)
 }

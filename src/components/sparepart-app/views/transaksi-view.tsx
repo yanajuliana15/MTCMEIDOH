@@ -83,22 +83,27 @@ export function TransaksiView({ user }: { user: User }) {
           <ExportImportButtons
             entity="transaksi"
             data={transaksi.map((t) => ({
-              tanggal: new Date(t.tanggal).toISOString().slice(0, 16),
+              tanggal: new Date(t.tanggal).toLocaleString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+              }),
               kodeSparepart: t.sparepart?.kode || '',
               namaSparepart: t.sparepart?.nama || '',
               tipe: t.tipe,
-              jumlah: String(t.jumlah),
+              jumlah: t.jumlah,
               satuan: t.sparepart?.satuan || '',
               referensi: t.referensi || '',
               catatan: t.catatan || '',
             }))}
             columns={[
-              { key: 'tanggal', label: 'tanggal' },
-              { key: 'kodeSparepart', label: 'kodeSparepart' },
-              { key: 'tipe', label: 'tipe' },
-              { key: 'jumlah', label: 'jumlah' },
-              { key: 'referensi', label: 'referensi' },
-              { key: 'catatan', label: 'catatan' },
+              { key: 'tanggal', label: 'Tanggal' },
+              { key: 'kodeSparepart', label: 'Kode Sparepart' },
+              { key: 'namaSparepart', label: 'Nama Sparepart' },
+              { key: 'tipe', label: 'Tipe' },
+              { key: 'jumlah', label: 'Jumlah' },
+              { key: 'satuan', label: 'Satuan' },
+              { key: 'referensi', label: 'Referensi' },
+              { key: 'catatan', label: 'Catatan' },
             ]}
             filters={{ tipe: filterTipe !== 'all' ? filterTipe : undefined }}
             showImport={canAddTransaksi}

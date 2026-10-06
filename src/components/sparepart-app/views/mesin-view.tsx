@@ -118,16 +118,16 @@ export function MesinView({ user }: { user: User }) {
               nama: m.nama,
               manufaktur: m.manufaktur || '',
               lokasi: m.lokasi || '',
-              tahunInstal: m.tahunInstal ? String(m.tahunInstal) : '',
+              tahunInstal: m.tahunInstal || '',
               status: m.status,
             }))}
             columns={[
-              { key: 'kode', label: 'kode' },
-              { key: 'nama', label: 'nama' },
-              { key: 'manufaktur', label: 'manufaktur' },
-              { key: 'lokasi', label: 'lokasi' },
-              { key: 'tahunInstal', label: 'tahunInstal' },
-              { key: 'status', label: 'status' },
+              { key: 'kode', label: 'Kode' },
+              { key: 'nama', label: 'Nama' },
+              { key: 'manufaktur', label: 'Manufaktur' },
+              { key: 'lokasi', label: 'Lokasi' },
+              { key: 'tahunInstal', label: 'Tahun Instal' },
+              { key: 'status', label: 'Status' },
             ]}
             filters={{
               search,

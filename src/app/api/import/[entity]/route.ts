@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+// Helper: ambil nilai dari row dengan mencari beberapa kemungkinan key (case-insensitive, tanpa spasi)
+// Misal: getField(row, 'kode') akan cari row.kode, row.Kode, row.KODE, row['Kode '], dll
+function getField(row: Record<string, string>, ...keys: string[]): string {
+  const normalized: Record<string, string> = {}
+  for (const [k, v] of Object.entries(row)) {
+    normalized[k.toLowerCase().replace(/\s+/g, '')] = v
+  }
+  for (const key of keys) {
+    const normKey = key.toLowerCase().replace(/\s+/g, '')
+    if (normalized[normKey] !== undefined && normalized[normKey] !== '') {
+      return normalized[normKey]
+    }
+  }
+  return ''
+}
+
 // POST /api/import/[entity] — import data dari array of objects (JSON body)
 // Body: { data: Record<string, string>[] }
 // Akan di-skip bila kode/nama sudah ada (upsert-like behavior untuk create new only)
@@ -21,8 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
     if (entity === 'sparepart') {
       for (let i = 0; i < data.length; i++) {
         const row = data[i]
-        const kode = (row.kode || row.Kode || '').trim()
-        const nama = (row.nama || row.Nama || '').trim()
+        const kode = getField(row, 'kode').trim()
+        const nama = getField(row, 'nama').trim()
         if (!kode || !nama) {
           errors.push(`Baris ${i + 2}: kode/nama kosong, dilewati`)
           skipped++
@@ -32,8 +48,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
         if (existing) { skipped++; continue }
 
         // Cari kategori & supplier by nama
-        const kategoriNama = (row.kategori || row.Kategori || '').trim()
-        const supplierNama = (row.supplier || row.Supplier || '').trim()
+        const kategoriNama = getField(row, 'kategori').trim()
+        const supplierNama = getField(row, 'supplier').trim()
         let kategoriId: string | null = null
         let supplierId: string | null = null
         if (kategoriNama) {
@@ -49,13 +65,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
           data: {
             kode, nama,
             kategoriId, supplierId,
-            satuan: (row.satuan || row.Satuan || 'pcs').trim(),
-            stok: parseNum(row.stok ?? row.Stok, 0),
-            stokMinimum: parseNum(row.stokMinimum ?? row['stok minimum'] ?? row['Min. Stok'] ?? row.minStok, 0),
-            hargaBeli: parseNum(row.hargaBeli ?? row['harga beli'] ?? row['Harga Beli'], 0),
-            hargaJual: parseNum(row.hargaJual ?? row['harga jual'] ?? row['Harga Jual'], 0),
-            lokasiRak: (row.lokasiRak || row['lokasi rak'] || row['Lokasi Rak'] || '').trim() || null,
-            catatan: (row.catatan || row.Catatan || '').trim() || null,
+            satuan: getField(row, 'satuan') || 'pcs',
+            stok: parseNum(getField(row, 'stok'), 0),
+            stokMinimum: parseNum(getField(row, 'stokMinimum', 'stok minimum', 'min stok'), 0),
+            hargaBeli: parseNum(getField(row, 'hargaBeli', 'harga beli'), 0),
+            hargaJual: parseNum(getField(row, 'hargaJual', 'harga jual'), 0),
+            lokasiRak: getField(row, 'lokasiRak', 'lokasi rak') || null,
+            catatan: getField(row, 'catatan') || null,
           },
         })
         created++
@@ -63,8 +79,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
     } else if (entity === 'mesin') {
       for (let i = 0; i < data.length; i++) {
         const row = data[i]
-        const kode = (row.kode || row.Kode || '').trim()
-        const nama = (row.nama || row.Nama || '').trim()
+        const kode = getField(row, 'kode').trim()
+        const nama = getField(row, 'nama').trim()
         if (!kode || !nama) {
           errors.push(`Baris ${i + 2}: kode/nama kosong, dilewati`)
           skipped++
@@ -76,10 +92,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
         await db.mesin.create({
           data: {
             kode, nama,
-            lokasi: (row.lokasi || row.Lokasi || '').trim() || null,
-            manufaktur: (row.manufaktur || row.Manufaktur || '').trim() || null,
-            tahunInstal: parseNum(row.tahunInstal || row['tahun instal'] || row['Tahun Instalasi'], new Date().getFullYear()) || null,
-            status: (row.status || row.Status || 'Aktif').trim() as any,
+            lokasi: getField(row, 'lokasi') || null,
+            manufaktur: getField(row, 'manufaktur') || null,
+            tahunInstal: parseNum(getField(row, 'tahunInstal', 'tahun instal'), new Date().getFullYear()) || null,
+            status: getField(row, 'status') || 'Aktif',
           },
         })
         created++
@@ -87,7 +103,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
     } else if (entity === 'supplier') {
       for (let i = 0; i < data.length; i++) {
         const row = data[i]
-        const nama = (row.nama || row.Nama || '').trim()
+        const nama = getField(row, 'nama').trim()
         if (!nama) {
           errors.push(`Baris ${i + 2}: nama kosong, dilewati`)
           skipped++
@@ -100,10 +116,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
         await db.supplier.create({
           data: {
             nama,
-            kontak: (row.kontak || row.Kontak || '').trim() || null,
-            telepon: (row.telepon || row.Telepon || '').trim() || null,
-            email: (row.email || row.Email || '').trim() || null,
-            alamat: (row.alamat || row.Alamat || '').trim() || null,
+            kontak: getField(row, 'kontak') || null,
+            telepon: getField(row, 'telepon') || null,
+            email: getField(row, 'email') || null,
+            alamat: getField(row, 'alamat') || null,
           },
         })
         created++
@@ -111,9 +127,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
     } else if (entity === 'transaksi') {
       for (let i = 0; i < data.length; i++) {
         const row = data[i]
-        const kodeSparepart = (row.kodeSparepart || row['kode sparepart'] || row.kode || row.Kode || '').trim()
-        const tipe = (row.tipe || row.Tipe || '').trim().toUpperCase()
-        const jumlah = parseNum(row.jumlah || row.Jumlah, 0)
+        const kodeSparepart = getField(row, 'kodeSparepart', 'kode sparepart', 'kode')
+        const tipe = getField(row, 'tipe').toUpperCase()
+        const jumlah = parseNum(getField(row, 'jumlah'), 0)
         if (!kodeSparepart || !tipe || !jumlah) {
           errors.push(`Baris ${i + 2}: kode/tipe/jumlah tidak valid, dilewati`)
           skipped++
@@ -136,7 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
           continue
         }
 
-        const tglStr = (row.tanggal || row.Tanggal || '').trim()
+        const tglStr = getField(row, 'tanggal')
         const tanggal = tglStr ? new Date(tglStr) : new Date()
         if (isNaN(tanggal.getTime())) {
           errors.push(`Baris ${i + 2}: tanggal tidak valid, pakai tanggal sekarang`)
@@ -146,8 +162,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
           db.transaksiStok.create({
             data: {
               sparepartId: sparepart.id, tipe, jumlah,
-              referensi: (row.referensi || row.Referensi || '').trim() || null,
-              catatan: (row.catatan || row.Catatan || '').trim() || null,
+              referensi: getField(row, 'referensi') || null,
+              catatan: getField(row, 'catatan') || null,
               tanggal: isNaN(tanggal.getTime()) ? new Date() : tanggal,
             },
           }),
