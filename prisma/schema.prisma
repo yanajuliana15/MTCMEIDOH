@@ -1,0 +1,89 @@
+// Prisma schema for Industrial Machine Sparepart Management System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Kategori {
+  id          String      @id @default(cuid())
+  nama        String      @unique
+  deskripsi   String?
+  spareparts  Sparepart[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Mesin {
+  id          String           @id @default(cuid())
+  kode        String           @unique
+  nama        String
+  lokasi      String?
+  manufaktur  String?
+  tahunInstal Int?
+  status      String           @default("Aktif") // Aktif / Maintenance / Berhenti
+  spareparts  MesinSparepart[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Supplier {
+  id         String        @id @default(cuid())
+  nama       String
+  kontak     String?
+  telepon    String?
+  email      String?
+  alamat     String?
+  spareparts Sparepart[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Sparepart {
+  id            String             @id @default(cuid())
+  kode          String             @unique
+  nama          String
+  kategoriId    String?
+  kategori      Kategori?           @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
+  supplierId    String?
+  supplier      Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  satuan        String             @default("pcs") // pcs, set, unit, liter, meter
+  stok          Int                @default(0)
+  stokMinimum   Int                @default(0)
+  hargaBeli     Float              @default(0)
+  hargaJual     Float              @default(0)
+  lokasiRak     String?            // Lokasi penyimpanan di gudang
+  catatan       String?
+  gambar        String?
+  mesin         MesinSparepart[]
+  transaksi     TransaksiStok[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+// Many-to-many: Sparepart compatible with multiple Mesin
+model MesinSparepart {
+  id          String     @id @default(cuid())
+  mesinId     String
+  sparepartId String
+  mesin       Mesin      @relation(fields: [mesinId], references: [id], onDelete: Cascade)
+  sparepart   Sparepart  @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+
+  @@unique([mesinId, sparepartId])
+}
+
+model TransaksiStok {
+  id          String     @id @default(cuid())
+  sparepartId String
+  sparepart   Sparepart  @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
+  tipe        String     // MASUK / KELUAR
+  jumlah      Int
+  referensi   String?    // nomor PO / work order
+  catatan     String?
+  tanggal     DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+}
