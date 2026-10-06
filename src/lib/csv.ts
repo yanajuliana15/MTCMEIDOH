@@ -1,4 +1,8 @@
 // Helper untuk generate & parse CSV
+// PENTING: Separator pakai TITIK KOMA (;) agar Excel Indonesia langsung recognize kolom
+// (di locale Indonesia, koma dipakai sebagai pemisah desimal, jadi CSV dengan koma menyatu)
+
+const CSV_SEPARATOR = ';'
 
 interface CSVMeta {
   /** Judul utama (baris 1) */
@@ -22,8 +26,9 @@ interface CSVMeta {
  *
  * Jika `meta` tidak diisi, generate CSV standard (header di baris 1).
  *
+ * Separator: TITIK KOMA (;) — agar Excel Indonesia langsung pisah kolom dengan benar
  * Angka tetap sebagai number (tanpa thousand separator) agar Excel kenali.
- * Text yang mengandung koma/quote/newline di-escape otomatis.
+ * Text yang mengandung titik koma/quote/newline di-escape otomatis.
  */
 export function generateCSV<T extends Record<string, any>>(
   rows: T[],
@@ -50,11 +55,11 @@ export function generateCSV<T extends Record<string, any>>(
   }
 
   // Header row
-  lines.push(cols.map((c) => escapeCSV(c.label)).join(','))
+  lines.push(cols.map((c) => escapeCSV(c.label)).join(CSV_SEPARATOR))
 
   // Data rows
   for (const row of rows) {
-    lines.push(cols.map((c) => escapeCSV(formatValue(row[c.key]))).join(','))
+    lines.push(cols.map((c) => escapeCSV(formatValue(row[c.key]))).join(CSV_SEPARATOR))
   }
 
   // Summary row di akhir — hanya jika meta diisi
@@ -92,8 +97,8 @@ function formatValue(value: any): any {
 function escapeCSV(value: any): string {
   if (value === null || value === undefined) return ''
   const str = String(value)
-  // Bila mengandung karakter special, bungkus dengan quote dan escape quote internal
-  if (/[",\r\n]/.test(str)) {
+  // Bila mengandung karakter special (titik koma, quote, newline), bungkus dengan quote
+  if (new RegExp(`["${CSV_SEPARATOR}\r\n]`).test(str)) {
     return `"${str.replace(/"/g, '""')}"`
   }
   return str
@@ -103,6 +108,7 @@ function escapeCSV(value: any): string {
  * Parse CSV string menjadi array of objects.
  *
  * Smart parser:
+ * - Auto-detect separator: titik koma (;) atau koma (,)
  * - Skip baris meta (judul, info, baris kosong) di atas header
  * - Deteksi baris header: baris yang punya >= 3 field valid (bukan baris info/summary)
  * - Skip baris summary di bawah (baris yang dimulai dengan "TOTAL" atau "Ringkasan")
@@ -111,7 +117,15 @@ function escapeCSV(value: any): string {
 export function parseCSV(text: string): Record<string, string>[] {
   // Normalisasi line ending
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-  const allRows = splitCSVLines(normalized)
+  let allRows = splitCSVLines(normalized, ';') // coba titik koma dulu
+
+  // Auto-detect separator: kalau semua baris cuma punya 1 field dengan titik koma,
+  // kemungkinan CSV pakai koma → re-parse dengan koma
+  const sampleRow = allRows.find((r) => r.length > 1 || (r[0] && r[0].includes(',')))
+  if (sampleRow && sampleRow.length === 1 && sampleRow[0].includes(',')) {
+    allRows = splitCSVLines(normalized, ',')
+  }
+
   if (allRows.length < 2) return []
 
   // Cari baris header: baris yang punya >= 3 field non-kosong
@@ -160,7 +174,7 @@ export function parseCSV(text: string): Record<string, string>[] {
 }
 
 // Split CSV text menjadi array of array cells (mendukung quoted fields dengan newline)
-function splitCSVLines(text: string): string[][] {
+function splitCSVLines(text: string, separator: string): string[][] {
   const rows: string[][] = []
   let currentRow: string[] = []
   let currentField = ''
@@ -190,7 +204,7 @@ function splitCSVLines(text: string): string[][] {
         inQuotes = true
         i++
         continue
-      } else if (char === ',') {
+      } else if (char === separator) {
         currentRow.push(currentField)
         currentField = ''
         i++
