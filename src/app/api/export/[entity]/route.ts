@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ent
 const HEADER_FILL: Partial<ExcelJS.Fill> = {
   type: 'pattern',
   pattern: 'solid',
-  fgColor: { argb: 'FF1F2937' }, // slate-900
+  fgColor: { argb: 'FF0F172A' }, // slate-950 (lebih gelap)
 }
 const HEADER_FONT: Partial<ExcelJS.Font> = {
   bold: true,
@@ -75,6 +75,13 @@ const HEADER_FONT: Partial<ExcelJS.Font> = {
 const BODY_FONT: Partial<ExcelJS.Font> = {
   size: 10,
   name: 'Calibri',
+  color: { argb: 'FF1E293B' }, // slate-800
+}
+const NO_FONT: Partial<ExcelJS.Font> = {
+  size: 10,
+  name: 'Calibri',
+  bold: true,
+  color: { argb: 'FF64748B' }, // slate-500
 }
 const BORDER: Partial<ExcelJS.Borders> = {
   top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
@@ -93,7 +100,7 @@ interface ColumnDef {
 }
 
 function styleSheet(ws: ExcelJS.Worksheet, columns: ColumnDef[], title: string, subtitle: string) {
-  // Title bar di row 1 (merged)
+  // Title bar di row 1 (merged) — gradient effect pakai dark fill
   ws.mergeCells(1, 1, 1, columns.length)
   const titleCell = ws.getCell(1, 1)
   titleCell.value = title
@@ -103,26 +110,35 @@ function styleSheet(ws: ExcelJS.Worksheet, columns: ColumnDef[], title: string, 
     fgColor: { argb: 'FF0F172A' }, // slate-950
   }
   titleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
-  ws.getRow(1).height = 28
+  ws.getRow(1).height = 32
 
-  // Subtitle di row 2 (merged) — info export
+  // Subtitle di row 2 (merged) — light gray background
   ws.mergeCells(2, 1, 2, columns.length)
   const subCell = ws.getCell(2, 1)
   subCell.value = subtitle
   subCell.font = { italic: true, size: 9, color: { argb: 'FF6B7280' }, name: 'Calibri' }
+  subCell.fill = {
+    type: 'pattern', pattern: 'solid',
+    fgColor: { argb: 'FFF1F5F9' }, // slate-100
+  }
   subCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
-  ws.getRow(2).height = 18
+  ws.getRow(2).height = 20
 
   // Header row di row 3
   const headerRow = ws.getRow(3)
-  headerRow.height = 22
+  headerRow.height = 26
   columns.forEach((col, idx) => {
     const cell = headerRow.getCell(idx + 1)
     cell.value = col.header
     cell.font = HEADER_FONT
     cell.fill = HEADER_FILL
-    cell.alignment = { vertical: 'middle', horizontal: col.align || 'left', indent: col.align === 'left' ? 1 : 0 }
-    cell.border = BORDER
+    cell.alignment = { vertical: 'middle', horizontal: col.align || 'left', indent: col.align === 'left' ? 1 : 0, wrapText: true }
+    cell.border = {
+      top: { style: 'medium', color: { argb: 'FF0F172A' } },
+      left: { style: 'thin', color: { argb: 'FF334155' } },
+      bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+      right: { style: 'thin', color: { argb: 'FF334155' } },
+    }
   })
 
   // Define columns
@@ -144,22 +160,34 @@ function styleSheet(ws: ExcelJS.Worksheet, columns: ColumnDef[], title: string, 
 
 function fillDataRow(ws: ExcelJS.Worksheet, rowIndex: number, data: Record<string, any>, columns: ColumnDef[]) {
   const row = ws.getRow(rowIndex)
-  row.height = 18
+  row.height = 20
   columns.forEach((col, idx) => {
     const cell = row.getCell(idx + 1)
     const value = data[col.key]
     cell.value = value !== null && value !== undefined && value !== '' ? value : ''
-    cell.font = BODY_FONT
+
+    // Kolom "no" (nomor urut) pakai styling khusus
+    if (col.key === 'no') {
+      cell.font = NO_FONT
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }
+    } else {
+      cell.font = BODY_FONT
+      cell.alignment = { vertical: 'middle', horizontal: col.align || 'left', indent: col.align === 'left' ? 1 : 0 }
+    }
+
     cell.border = BORDER
-    cell.alignment = { vertical: 'middle', horizontal: col.align || 'left', indent: col.align === 'left' ? 1 : 0 }
+
+    // Number format
     if (col.format && typeof value === 'number') {
       cell.numFmt = col.format
     }
-    // Status-based coloring
+
+    // Status-based coloring (priority tertinggi, override font)
     if (col.statusColors && typeof value === 'string' && col.statusColors[value]) {
       const colors = col.statusColors[value]
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.fill } }
-      cell.font = { ...BODY_FONT, bold: true, color: { argb: colors.font } }
+      cell.font = { size: 10, name: 'Calibri', bold: true, color: { argb: colors.font } }
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }
     }
   })
 }
@@ -174,19 +202,26 @@ function applyAlternatingRows(ws: ExcelJS.Worksheet, startRow: number, endRow: n
         const cell = ws.getRow(r).getCell(c)
         // Skip jika cell sudah punya fill solid (misal status color)
         if (cell.fill && (cell.fill as any).patternType === 'solid') continue
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } } // slate-50
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } } // slate-50
       }
     }
   }
 }
 
-// Helper: fill semua cell di summary row dengan background gray + border
-function fillSummaryRowCells(ws: ExcelJS.Worksheet, rowIndex: number, numCols: number, fgColor = 'FFE5E7EB') {
+// Helper: fill semua cell di summary row dengan background + border tebal di atas
+function fillSummaryRowCells(ws: ExcelJS.Worksheet, rowIndex: number, numCols: number, bgColor = 'FF0F172A') {
+  const summaryBorder: Partial<ExcelJS.Borders> = {
+    top: { style: 'medium', color: { argb: 'FF0F172A' } },
+    left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+    bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+    right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+  }
   for (let c = 1; c <= numCols; c++) {
     const cell = ws.getRow(rowIndex).getCell(c)
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fgColor } }
-    cell.border = BORDER
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } }
+    cell.border = summaryBorder
   }
+  ws.getRow(rowIndex).height = 24
 }
 
 // === SPAREPART ===
@@ -216,6 +251,7 @@ async function buildSparepartSheet(wb: ExcelJS.Workbook, filters: any) {
   const statusOf = (s: number, min: number) => (s === 0 ? 'Habis' : s <= min ? 'Menipis' : 'Aman')
 
   const columns: ColumnDef[] = [
+    { header: 'No', key: 'no', width: 5, align: 'center', format: '0' },
     { header: 'Kode', key: 'kode', width: 18, align: 'left' },
     { header: 'Nama', key: 'nama', width: 32, align: 'left' },
     { header: 'Kategori', key: 'kategori', width: 18, align: 'left' },
@@ -243,6 +279,7 @@ async function buildSparepartSheet(wb: ExcelJS.Workbook, filters: any) {
   spareparts.forEach((sp, i) => {
     const row = startRow + i
     fillDataRow(ws, row, {
+      no: i + 1,
       kode: sp.kode,
       nama: sp.nama,
       kategori: sp.kategori?.nama || '-',
@@ -260,27 +297,27 @@ async function buildSparepartSheet(wb: ExcelJS.Workbook, filters: any) {
     }, columns)
   })
 
-  // Summary row di bawah
+  // Summary row di bawah — dark background, white font
   const summaryRow = startRow + spareparts.length + 1
-  // Fill semua cell di summary row dengan gray background
   fillSummaryRowCells(ws, summaryRow, columns.length)
-  ws.mergeCells(summaryRow, 1, summaryRow, 5)
+  // Merge kolom 1-6 untuk label TOTAL
+  ws.mergeCells(summaryRow, 1, summaryRow, 6)
   const sumCell = ws.getCell(summaryRow, 1)
   sumCell.value = 'TOTAL'
-  sumCell.font = { bold: true, size: 11, name: 'Calibri' }
+  sumCell.font = { bold: true, size: 11, name: 'Calibri', color: { argb: 'FFFFFFFF' } }
   sumCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
 
-  // Total stok (kolom 6 = stok)
-  const sumStokCell = ws.getCell(summaryRow, 6)
+  // Total stok (kolom 7 = stok, setelah no)
+  const sumStokCell = ws.getCell(summaryRow, 7)
   sumStokCell.value = spareparts.reduce((s, sp) => s + sp.stok, 0)
-  sumStokCell.font = { bold: true, size: 11, name: 'Calibri' }
+  sumStokCell.font = { bold: true, size: 11, name: 'Calibri', color: { argb: 'FFFFFFFF' } }
   sumStokCell.numFmt = '#,##0'
   sumStokCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
 
-  // Total nilai (kolom 11 = nilaiStok)
-  const sumNilaiCell = ws.getCell(summaryRow, 11)
+  // Total nilai (kolom 12 = nilaiStok)
+  const sumNilaiCell = ws.getCell(summaryRow, 12)
   sumNilaiCell.value = spareparts.reduce((s, sp) => s + sp.stok * sp.hargaBeli, 0)
-  sumNilaiCell.font = { bold: true, size: 11, name: 'Calibri' }
+  sumNilaiCell.font = { bold: true, size: 11, name: 'Calibri', color: { argb: 'FFFFFFFF' } }
   sumNilaiCell.numFmt = '"Rp"#,##0'
   sumNilaiCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
 
@@ -307,6 +344,7 @@ async function buildMesinSheet(wb: ExcelJS.Workbook, filters: any) {
   })
 
   const columns: ColumnDef[] = [
+    { header: 'No', key: 'no', width: 5, align: 'center', format: '0' },
     { header: 'Kode', key: 'kode', width: 14, align: 'left' },
     { header: 'Nama', key: 'nama', width: 32, align: 'left' },
     { header: 'Manufaktur', key: 'manufaktur', width: 18, align: 'left' },
@@ -327,6 +365,7 @@ async function buildMesinSheet(wb: ExcelJS.Workbook, filters: any) {
   const startRow = 4
   mesins.forEach((m, i) => {
     fillDataRow(ws, startRow + i, {
+      no: i + 1,
       kode: m.kode,
       nama: m.nama,
       manufaktur: m.manufaktur || '-',
@@ -445,13 +484,13 @@ async function buildTransaksiSheet(wb: ExcelJS.Workbook, filters: any) {
     }, columns)
   })
 
-  // Summary row
+  // Summary row — dark background, white font
   const summaryRow = startRow + transaksi.length + 1
   fillSummaryRowCells(ws, summaryRow, columns.length)
   ws.mergeCells(summaryRow, 1, summaryRow, 5)
   const sumCell = ws.getCell(summaryRow, 1)
   sumCell.value = `TOTAL — Masuk: ${totalMasuk}  ·  Keluar: ${totalKeluar}  ·  Net: ${totalMasuk - totalKeluar}`
-  sumCell.font = { bold: true, size: 11, name: 'Calibri' }
+  sumCell.font = { bold: true, size: 11, name: 'Calibri', color: { argb: 'FFFFFFFF' } }
   sumCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
 
   applyAlternatingRows(ws, startRow, startRow + transaksi.length - 1, columns.length)

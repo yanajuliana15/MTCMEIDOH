@@ -38,11 +38,6 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
     }
   }
 
-  const fillDemo = (u: string, p: string) => {
-    setUsername(u)
-    setPassword(p)
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md">
@@ -103,37 +98,11 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                 )}
               </Button>
             </form>
-
-            <div className="mt-5 pt-4 border-t">
-              <p className="text-xs text-center text-muted-foreground mb-3">Akun Demo (klik untuk isi)</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <DemoBtn letter="S" name="Superadmin" desc="Full + Users" onClick={() => fillDemo('superadmin', 'super123')} />
-                <DemoBtn letter="A" name="Admin" desc="Full access" onClick={() => fillDemo('admin', 'admin123')} />
-                <DemoBtn letter="G" name="Gudang" desc="Edit stok" onClick={() => fillDemo('gudang', 'gudang123')} />
-                <DemoBtn letter="O" name="Operator" desc="Stok keluar" onClick={() => fillDemo('operator', 'operator123')} />
-              </div>
-            </div>
           </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">© 2026 MTC MEIDOH · v1.0</p>
       </div>
     </div>
-  )
-}
-
-function DemoBtn({ letter, name, desc, onClick }: { letter: string; name: string; desc: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex flex-col items-center gap-1 rounded-lg border bg-card p-2 hover:bg-accent transition-colors"
-    >
-      <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-        {letter}
-      </div>
-      <span className="text-xs font-medium">{name}</span>
-      <span className="text-[10px] text-muted-foreground">{desc}</span>
-    </button>
   )
 }
