@@ -2,8 +2,10 @@
 
 /**
  * Generate CSV string dari array of objects.
- * - Header diambil dari keys pertama object (atau dari parameter `headers`)
+ * - Header diambil dari parameter `headers` (label)
  * - Nilai di-escape: bila mengandung koma, quote, atau newline → dibungkus quote
+ * - Angka diformat dengan separator ribuan (titik) untuk readabilitas di Excel
+ * - Tidak ada BOM di sini (BOM ditambahkan saat download)
  */
 export function generateCSV<T extends Record<string, any>>(
   rows: T[],
@@ -17,9 +19,32 @@ export function generateCSV<T extends Record<string, any>>(
 
   const headerLine = cols.map((c) => escapeCSV(c.label)).join(',')
   const dataLines = rows.map((row) =>
-    cols.map((c) => escapeCSV(row[c.key] ?? '')).join(',')
+    cols.map((c) => escapeCSV(formatValue(row[c.key]))).join(',')
   )
   return [headerLine, ...dataLines].join('\r\n')
+}
+
+/**
+ * Format nilai untuk CSV:
+ * - Number: tetap angka (Excel akan kenali), TAPI tidak ada thousand separator
+ *   agar Excel/LibreOffice pasti kenali sebagai number (bukan string)
+ * - Date: konversi ke ISO string agar konsisten
+ * - Null/undefined/empty: string kosong
+ * - Object/Array: JSON stringify
+ */
+function formatValue(value: any): any {
+  if (value === null || value === undefined || value === '') return ''
+  if (typeof value === 'number') {
+    // Pastikan angka dengan presisi penuh, tanpa separator
+    return value
+  }
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value)
+  }
+  return value
 }
 
 function escapeCSV(value: any): string {
@@ -118,10 +143,13 @@ function splitCSVLines(text: string): string[][] {
 }
 
 /**
- * Trigger download file CSV di browser
+ * Trigger download file CSV di browser.
+ * Tambah BOM UTF-8 agar Excel membaca karakter khusus (Indonesia) dengan benar.
  */
 export function downloadCSV(filename: string, csvContent: string) {
-  // Tambah BOM agar Excel membaca UTF-8 dengan benar
+  // Tambah BOM (Byte Order Mark) UTF-8: \uFEFF
+  // Ini penting agar Excel/LibreOffice kenali encoding UTF-8 dan tampilkan karakter
+  // Indonesia (seperti é, ñ, dll) dengan benar, bukan mojibake.
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')

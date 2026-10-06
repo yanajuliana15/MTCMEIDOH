@@ -129,12 +129,7 @@ export function MesinView({ user }: { user: User }) {
               { key: 'tahunInstal', label: 'Tahun Instal' },
               { key: 'status', label: 'Status' },
             ]}
-            filters={{
-              search,
-              status: filterStatus !== 'all' ? filterStatus : undefined,
-            }}
             showImport={perm.canEditMesin}
-            canExportExcel={perm.canExportExcel}
             onImported={loadData}
           />
           {perm.canEditMesin && (

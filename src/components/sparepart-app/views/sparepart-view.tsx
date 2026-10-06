@@ -160,6 +160,7 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
               satuan: it.satuan,
               stok: it.stok,
               stokMinimum: it.stokMinimum,
+              status: getStatusStok(it.stok, it.stokMinimum) === 'habis' ? 'Habis' : getStatusStok(it.stok, it.stokMinimum) === 'menipis' ? 'Menipis' : 'Aman',
               hargaBeli: it.hargaBeli,
               hargaJual: it.hargaJual,
               lokasiRak: it.lokasiRak || '',
@@ -173,19 +174,13 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
               { key: 'satuan', label: 'Satuan' },
               { key: 'stok', label: 'Stok' },
               { key: 'stokMinimum', label: 'Stok Minimum' },
+              { key: 'status', label: 'Status' },
               { key: 'hargaBeli', label: 'Harga Beli' },
               { key: 'hargaJual', label: 'Harga Jual' },
               { key: 'lokasiRak', label: 'Lokasi Rak' },
               { key: 'catatan', label: 'Catatan' },
             ]}
-            filters={{
-              search,
-              kategoriId: filterKategori !== 'all' ? filterKategori : undefined,
-              supplierId: filterSupplier !== 'all' ? filterSupplier : undefined,
-              statusStok: filterStatus !== 'all' ? filterStatus : undefined,
-            }}
             showImport={perm.canEditSparepart}
-            canExportExcel={perm.canExportExcel}
             onImported={loadData}
           />
           {perm.canEditSparepart && (

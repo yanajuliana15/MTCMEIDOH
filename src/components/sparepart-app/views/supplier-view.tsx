@@ -104,9 +104,7 @@ export function SupplierView({ user }: { user: User }) {
               { key: 'email', label: 'Email' },
               { key: 'alamat', label: 'Alamat' },
             ]}
-            filters={{ search }}
             showImport={perm.canEditSupplier}
-            canExportExcel={perm.canExportExcel}
             onImported={loadData}
           />
           {perm.canEditSupplier && (
