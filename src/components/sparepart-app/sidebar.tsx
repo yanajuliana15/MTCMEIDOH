@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import type { ViewName, User } from '@/lib/types'
 import { ROLE_LABEL, ROLE_BADGE_COLOR } from '@/lib/types'
-import { LayoutDashboard, Package, Cog, Truck, ArrowLeftRight, Wrench, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, Cog, Truck, ArrowLeftRight, Factory, LogOut } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
@@ -34,10 +34,10 @@ export function Sidebar({ activeView, onViewChange, alertsCount, user, onLogout 
       <aside className="hidden md:flex w-64 shrink-0 flex-col border-r bg-card h-screen sticky top-0">
         <div className="flex h-16 items-center gap-2 px-6 border-b">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wrench className="h-5 w-5" />
+            <Factory className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-sm font-bold leading-tight">SparePart Pro</div>
+            <div className="text-sm font-bold leading-tight">MTC MEIDOH</div>
             <div className="text-xs text-muted-foreground">Mesin Industri</div>
           </div>
         </div>
@@ -123,9 +123,9 @@ export function MobileNav({ activeView, onViewChange, alertsCount, user, onLogou
       <header className="md:hidden sticky top-0 z-30 bg-card border-b px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-            <Wrench className="h-4 w-4" />
+            <Factory className="h-4 w-4" />
           </div>
-          <span className="font-bold text-sm">SparePart Pro</span>
+          <span className="font-bold text-sm">MTC MEIDOH</span>
         </div>
         <button
           onClick={() => setConfirmLogout(true)}

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { Wrench, User as UserIcon, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import { Factory, User as UserIcon, Lock, ArrowRight, Loader2 } from 'lucide-react'
 
 interface LoginPageProps {
   onSuccess: (user: any) => void
@@ -49,9 +49,9 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
         {/* Logo Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-xl bg-primary text-primary-foreground mb-3">
-            <Wrench className="h-7 w-7" />
+            <Factory className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">SparePart Pro</h1>
+          <h1 className="text-2xl font-bold tracking-tight">MTC MEIDOH</h1>
           <p className="text-sm text-muted-foreground mt-1">Manajemen Sparepart Mesin Industri</p>
         </div>
 
@@ -115,7 +115,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">© 2026 SparePart Pro · v1.0</p>
+        <p className="text-center text-xs text-muted-foreground mt-6">© 2026 MTC MEIDOH · v1.0</p>
       </div>
     </div>
   )

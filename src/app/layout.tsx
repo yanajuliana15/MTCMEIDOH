@@ -14,13 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SparePart Pro - Manajemen Sparepart Mesin Industri",
-  description: "Sistem manajemen inventaris sparepart mesin industri: dashboard, katalog, mesin, supplier, transaksi stok.",
-  keywords: ["sparepart", "mesin industri", "inventaris", "manajemen stok", "maintenance"],
-  authors: [{ name: "SparePart Pro" }],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
+  title: "MTC MEIDOH - Manajemen Sparepart Mesin Industri",
+  description: "Sistem manajemen inventaris sparepart mesin industri MTC MEIDOH: dashboard, katalog, mesin, supplier, transaksi stok.",
+  keywords: ["MTC MEIDOH", "sparepart", "mesin industri", "inventaris", "manajemen stok", "maintenance"],
+  authors: [{ name: "MTC MEIDOH" }],
 };
 
 export default function RootLayout({
