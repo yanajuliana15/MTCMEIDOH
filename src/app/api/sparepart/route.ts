@@ -6,7 +6,6 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const search = searchParams.get('search') || ''
     const kategoriId = searchParams.get('kategoriId') || ''
-    const supplierId = searchParams.get('supplierId') || ''
     const statusStok = searchParams.get('statusStok') || ''
 
     const where: any = {}
@@ -17,20 +16,18 @@ export async function GET(req: NextRequest) {
       ]
     }
     if (kategoriId) where.kategoriId = kategoriId
-    if (supplierId) where.supplierId = supplierId
 
     let spareparts = await db.sparepart.findMany({
       where,
       include: {
         kategori: true,
-        supplier: true,
         mesin: { include: { mesin: true } },
       },
       orderBy: { kode: 'asc' },
     })
 
     if (statusStok === 'menipis') {
-      spareparts = spareparts.filter((s) => s.stok <= s.stokMinimum)
+      spareparts = spareparts.filter((s) => s.stok <= s.stokMinimum && s.stok > 0)
     } else if (statusStok === 'habis') {
       spareparts = spareparts.filter((s) => s.stok === 0)
     } else if (statusStok === 'aman') {
@@ -47,7 +44,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { kode, nama, kategoriId, supplierId, satuan, stok, stokMinimum, hargaBeli, hargaJual, lokasiRak, catatan, mesinIds } = body
+    const { kode, nama, kategoriId, satuan, stok, stokMinimum, hargaBeli, hargaJual, lokasiRak, catatan, mesinIds } = body
 
     if (!kode || !nama) {
       return NextResponse.json({ error: 'Kode dan nama sparepart wajib diisi' }, { status: 400 })
@@ -60,10 +57,8 @@ export async function POST(req: NextRequest) {
 
     const sparepart = await db.sparepart.create({
       data: {
-        kode,
-        nama,
+        kode, nama,
         kategoriId: kategoriId || null,
-        supplierId: supplierId || null,
         satuan: satuan || 'pcs',
         stok: Number(stok) || 0,
         stokMinimum: Number(stokMinimum) || 0,
@@ -75,7 +70,7 @@ export async function POST(req: NextRequest) {
           ? { mesin: { create: mesinIds.map((id: string) => ({ mesinId: id })) } }
           : {}),
       },
-      include: { kategori: true, supplier: true, mesin: { include: { mesin: true } } },
+      include: { kategori: true, mesin: { include: { mesin: true } } },
     })
 
     if (Number(stok) > 0) {

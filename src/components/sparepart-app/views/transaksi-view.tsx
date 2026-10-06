@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import type { Sparepart, TransaksiStok, TipeTransaksi } from '@/lib/types'
-import { formatRupiah, formatTanggal } from '@/lib/types'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import type { Sparepart, TransaksiStok, TipeTransaksi, User } from '@/lib/types'
+import { formatRupiah, formatTanggalCompact, ROLE_PERMISSIONS } from '@/lib/types'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,9 +12,10 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
-import { ArrowDownToLine, ArrowUpFromLine, Plus, History, Package, TrendingDown } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, Plus, History, TrendingDown, X } from 'lucide-react'
 
-export function TransaksiView() {
+export function TransaksiView({ user }: { user: User }) {
+  const perm = ROLE_PERMISSIONS[user.role]
   const [transaksi, setTransaksi] = useState<TransaksiStok[]>([])
   const [sparepartList, setSparepartList] = useState<Sparepart[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,7 +64,7 @@ export function TransaksiView() {
       }
       toast({
         title: 'Berhasil',
-        description: `Transaksi ${formData.tipe === 'MASUK' ? 'stok masuk' : 'stok keluar'} berhasil dicatat`,
+        description: `Transaksi ${formData.tipe === 'MASUK' ? 'stok masuk' : 'stok keluar'} dicatat`,
       })
       setIsFormOpen(false)
       loadData()
@@ -76,150 +77,127 @@ export function TransaksiView() {
 
   const totalMasuk = transaksi.filter((t) => t.tipe === 'MASUK').reduce((s, t) => s + t.jumlah, 0)
   const totalKeluar = transaksi.filter((t) => t.tipe === 'KELUAR').reduce((s, t) => s + t.jumlah, 0)
+  const netFlow = totalMasuk - totalKeluar
+
+  const canAddTransaksi = perm.canTransaksiMasuk || perm.canTransaksiKeluar
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Transaksi Stok</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Riwayat {transaksi.length} transaksi stok masuk/keluar
-          </p>
-        </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Catat Transaksi
-        </Button>
-      </div>
-
-      {/* Statistik */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-green-100 p-3">
-              <ArrowDownToLine className="h-5 w-5 text-green-600" />
+    <div className="pb-24">
+      {/* Stats summary - sticky */}
+      <div className="sticky top-[57px] z-20 bg-white/95 backdrop-blur border-b">
+        <div className="p-3 max-w-5xl mx-auto">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-emerald-50 p-3 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-emerald-700 mb-0.5">
+                <ArrowDownToLine className="h-3 w-3" /> Masuk
+              </div>
+              <div className="text-lg font-bold text-emerald-700">+{totalMasuk}</div>
             </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Total Stok Masuk</div>
-              <div className="text-xl font-bold">{totalMasuk} unit</div>
+            <div className="rounded-2xl bg-red-50 p-3 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-red-700 mb-0.5">
+                <ArrowUpFromLine className="h-3 w-3" /> Keluar
+              </div>
+              <div className="text-lg font-bold text-red-700">−{totalKeluar}</div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-red-100 p-3">
-              <ArrowUpFromLine className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Total Stok Keluar</div>
-              <div className="text-xl font-bold">{totalKeluar} unit</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="col-span-2 md:col-span-1">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-full bg-cyan-100 p-3">
-              <TrendingDown className="h-5 w-5 text-cyan-600" />
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Net Flow</div>
-              <div className={`text-xl font-bold ${totalMasuk - totalKeluar >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {totalMasuk - totalKeluar >= 0 ? '+' : ''}{totalMasuk - totalKeluar} unit
+            <div className="rounded-2xl bg-cyan-50 p-3 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-cyan-700 mb-0.5">
+                <TrendingDown className="h-3 w-3" /> Net
+              </div>
+              <div className={`text-lg font-bold ${netFlow >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                {netFlow >= 0 ? '+' : ''}{netFlow}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Filter chips */}
+          <div className="flex gap-1.5 mt-2 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'all', label: 'Semua' },
+              { id: 'MASUK', label: 'Masuk' },
+              { id: 'KELUAR', label: 'Keluar' },
+            ].map((chip) => (
+              <button
+                key={chip.id}
+                onClick={() => setFilterTipe(chip.id as any)}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+                  filterTipe === chip.id ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Filter */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-3">
-            <Select value={filterTipe} onValueChange={(v) => setFilterTipe(v as any)}>
-              <SelectTrigger className="w-full md:w-44">
-                <SelectValue placeholder="Tipe Transaksi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Tipe</SelectItem>
-                <SelectItem value="MASUK">Stok Masuk</SelectItem>
-                <SelectItem value="KELUAR">Stok Keluar</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterSparepart} onValueChange={setFilterSparepart}>
-              <SelectTrigger className="w-full md:flex-1">
-                <SelectValue placeholder="Filter per sparepart" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Sparepart</SelectItem>
-                {sparepartList.map((sp) => (
-                  <SelectItem key={sp.id} value={sp.id}>{sp.kode} · {sp.nama}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Timeline */}
-      {loading ? (
-        <Card>
-          <CardContent className="h-96 animate-pulse" />
-        </Card>
-      ) : transaksi.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <History className="h-12 w-12 text-muted-foreground mb-3" />
+      <div className="p-3 max-w-5xl mx-auto">
+        {loading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : transaksi.length === 0 ? (
+          <div className="text-center py-16">
+            <History className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-30" />
             <p className="text-sm font-medium">Belum ada transaksi</p>
-            <p className="text-xs text-muted-foreground mt-1">Catat transaksi pertama untuk mulai melacak pergerakan stok</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Riwayat Transaksi</CardTitle>
-            <CardDescription>{transaksi.length} transaksi terbaru</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-              {transaksi.map((t) => {
-                const isMasuk = t.tipe === 'MASUK'
-                return (
-                  <div
-                    key={t.id}
-                    className="flex items-start gap-3 rounded-md border p-3 hover:bg-accent/50 transition-colors"
-                  >
-                    <div className={`rounded-full p-2 shrink-0 ${isMasuk ? 'bg-green-100' : 'bg-red-100'}`}>
+            <p className="text-xs text-muted-foreground mt-1">Catat transaksi pertama Anda</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {transaksi.map((t) => {
+              const isMasuk = t.tipe === 'MASUK'
+              return (
+                <Card
+                  key={t.id}
+                  className="border-0 shadow-sm rounded-2xl p-3 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      isMasuk ? 'bg-emerald-50' : 'bg-red-50'
+                    }`}>
                       {isMasuk ? (
-                        <ArrowDownToLine className="h-4 w-4 text-green-600" />
+                        <ArrowDownToLine className="h-5 w-5 text-emerald-600" />
                       ) : (
-                        <ArrowUpFromLine className="h-4 w-4 text-red-600" />
+                        <ArrowUpFromLine className="h-5 w-5 text-red-600" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                         <span className="text-sm font-medium truncate">{t.sparepart?.nama}</span>
-                        <Badge variant="outline" className="text-[10px] font-mono">{t.sparepart?.kode}</Badge>
-                        <Badge variant={isMasuk ? 'default' : 'destructive'} className="text-[10px]">
-                          {isMasuk ? 'MASUK' : 'KELUAR'}
-                        </Badge>
+                        <Badge variant="outline" className="text-[9px] font-mono px-1 py-0 h-3.5">{t.sparepart?.kode}</Badge>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {formatTanggal(t.tanggal)}
-                        {t.referensi && ` · Ref: ${t.referensi}`}
+                      <div className="text-[10px] text-muted-foreground">
+                        {formatTanggalCompact(t.tanggal)}
+                        {t.referensi && ` · ${t.referensi}`}
                       </div>
-                      {t.catatan && <div className="text-xs text-muted-foreground mt-1 italic line-clamp-1">{t.catatan}</div>}
+                      {t.catatan && (
+                        <div className="text-[10px] text-muted-foreground italic line-clamp-1 mt-0.5">"{t.catatan}"</div>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={`text-sm font-bold ${isMasuk ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`text-sm font-bold ${isMasuk ? 'text-emerald-600' : 'text-red-600'}`}>
                         {isMasuk ? '+' : '−'}{t.jumlah}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">{t.sparepart?.satuan}</div>
+                      <div className="text-[9px] text-muted-foreground">{t.sparepart?.satuan}</div>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {canAddTransaksi && (
+        <button
+          onClick={() => setIsFormOpen(true)}
+          className="fixed bottom-20 md:bottom-6 right-4 z-30 h-14 w-14 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-600/40 flex items-center justify-center active:scale-95 transition-transform"
+          aria-label="Catat Transaksi"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
       )}
 
       <TransaksiForm
@@ -229,6 +207,7 @@ export function TransaksiView() {
         sparepartList={sparepartList}
         onSubmit={handleSave}
         submitting={submitting}
+        userRole={user.role}
       />
     </div>
   )
@@ -240,12 +219,17 @@ interface TransaksiFormProps {
   sparepartList: Sparepart[]
   onSubmit: (data: any) => void
   submitting: boolean
+  userRole: 'ADMIN' | 'OPERATOR' | 'GUDANG'
 }
 
-function TransaksiForm({ open, onOpenChange, sparepartList, onSubmit, submitting }: TransaksiFormProps) {
+function TransaksiForm({ open, onOpenChange, sparepartList, onSubmit, submitting, userRole }: TransaksiFormProps) {
+  const perm = ROLE_PERMISSIONS[userRole]
+  // Default tipe: jika operator hanya bisa KELUAR
+  const defaultTipe: TipeTransaksi = perm.canTransaksiMasuk ? 'MASUK' : 'KELUAR'
+
   const [form, setForm] = useState(() => ({
     sparepartId: '',
-    tipe: 'MASUK' as TipeTransaksi,
+    tipe: defaultTipe,
     jumlah: '',
     referensi: '',
     catatan: '',
@@ -264,18 +248,16 @@ function TransaksiForm({ open, onOpenChange, sparepartList, onSubmit, submitting
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle>Catat Transaksi Stok</DialogTitle>
-          <DialogDescription>
-            Transaksi akan langsung memperbarui stok sparepart
-          </DialogDescription>
+          <DialogDescription>Transaksi akan langsung mengupdate stok</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="t-sparepart">Sparepart *</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Sparepart *</Label>
             <Select value={form.sparepartId} onValueChange={(v) => setForm({ ...form, sparepartId: v })} required>
-              <SelectTrigger><SelectValue placeholder="Pilih sparepart" /></SelectTrigger>
+              <SelectTrigger className="h-10"><SelectValue placeholder="Pilih sparepart" /></SelectTrigger>
               <SelectContent>
                 {sparepartList.map((sp) => (
                   <SelectItem key={sp.id} value={sp.id}>
@@ -285,7 +267,7 @@ function TransaksiForm({ open, onOpenChange, sparepartList, onSubmit, submitting
               </SelectContent>
             </Select>
             {selectedSparepart && (
-              <div className="rounded-md bg-muted/50 p-2 text-xs">
+              <div className="rounded-xl bg-slate-50 p-2.5 text-xs space-y-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Stok saat ini</span>
                   <span className="font-semibold">{selectedSparepart.stok} {selectedSparepart.satuan}</span>
@@ -295,84 +277,86 @@ function TransaksiForm({ open, onOpenChange, sparepartList, onSubmit, submitting
                   <span className="font-semibold">{selectedSparepart.stokMinimum} {selectedSparepart.satuan}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Nilai/unit (Beli)</span>
+                  <span className="text-muted-foreground">Nilai/unit</span>
                   <span className="font-semibold">{formatRupiah(selectedSparepart.hargaBeli)}</span>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Tipe Transaksi *</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, tipe: 'MASUK' })}
-                  className={`flex flex-col items-center gap-1 rounded-md border p-3 text-xs font-medium transition-colors ${
-                    form.tipe === 'MASUK' ? 'border-green-500 bg-green-50 text-green-700' : 'hover:bg-accent'
-                  }`}
-                >
-                  <ArrowDownToLine className="h-5 w-5" />
-                  Stok Masuk
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, tipe: 'KELUAR' })}
-                  className={`flex flex-col items-center gap-1 rounded-md border p-3 text-xs font-medium transition-colors ${
-                    form.tipe === 'KELUAR' ? 'border-red-500 bg-red-50 text-red-700' : 'hover:bg-accent'
-                  }`}
-                >
-                  <ArrowUpFromLine className="h-5 w-5" />
-                  Stok Keluar
-                </button>
-              </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Tipe Transaksi *</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={!perm.canTransaksiMasuk}
+                onClick={() => setForm({ ...form, tipe: 'MASUK' })}
+                className={`flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  form.tipe === 'MASUK' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
+                }`}
+              >
+                <ArrowDownToLine className="h-5 w-5" />
+                Stok Masuk
+              </button>
+              <button
+                type="button"
+                disabled={!perm.canTransaksiKeluar}
+                onClick={() => setForm({ ...form, tipe: 'KELUAR' })}
+                className={`flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  form.tipe === 'KELUAR' ? 'border-red-500 bg-red-50 text-red-700' : 'hover:bg-accent'
+                }`}
+              >
+                <ArrowUpFromLine className="h-5 w-5" />
+                Stok Keluar
+              </button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="t-jumlah">Jumlah *</Label>
+            {userRole === 'OPERATOR' && (
+              <p className="text-[10px] text-muted-foreground">Operator hanya dapat mencatat stok keluar</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Jumlah *</Label>
               <Input
-                id="t-jumlah"
                 type="number"
                 min="1"
                 value={form.jumlah}
                 onChange={(e) => setForm({ ...form, jumlah: e.target.value })}
                 placeholder="10"
                 required
+                className="h-10"
               />
               {selectedSparepart && form.tipe === 'KELUAR' && Number(form.jumlah) > selectedSparepart.stok && (
-                <p className="text-xs text-destructive">Jumlah melebihi stok tersedia ({selectedSparepart.stok})</p>
+                <p className="text-[10px] text-destructive">Melebihi stok ({selectedSparepart.stok})</p>
               )}
               {selectedSparepart && <p className="text-[10px] text-muted-foreground">Satuan: {selectedSparepart.satuan}</p>}
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tanggal</Label>
+              <Input
+                type="datetime-local"
+                value={form.tanggal}
+                onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
+                className="h-10"
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="t-tanggal">Tanggal</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Referensi</Label>
             <Input
-              id="t-tanggal"
-              type="datetime-local"
-              value={form.tanggal}
-              onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="t-referensi">Referensi</Label>
-            <Input
-              id="t-referensi"
               value={form.referensi}
               onChange={(e) => setForm({ ...form, referensi: e.target.value })}
               placeholder={form.tipe === 'MASUK' ? 'PO-2025-001' : 'WO-2025-045'}
+              className="h-10"
             />
-            <p className="text-[10px] text-muted-foreground">
-              Nomor Purchase Order (untuk masuk) atau Work Order (untuk keluar)
-            </p>
+            <p className="text-[10px] text-muted-foreground">Nomor PO (masuk) atau Work Order (keluar)</p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="t-catatan">Catatan</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Catatan</Label>
             <Textarea
-              id="t-catatan"
               value={form.catatan}
               onChange={(e) => setForm({ ...form, catatan: e.target.value })}
               placeholder="Catatan tambahan..."
@@ -382,8 +366,8 @@ function TransaksiForm({ open, onOpenChange, sparepartList, onSubmit, submitting
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Batal</Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Menyimpan...' : 'Catat Transaksi'}
+            <Button type="submit" disabled={submitting} className="bg-cyan-600 hover:bg-cyan-700">
+              {submitting ? 'Menyimpan...' : 'Catat'}
             </Button>
           </DialogFooter>
         </form>

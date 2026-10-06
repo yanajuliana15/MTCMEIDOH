@@ -1,38 +1,68 @@
 'use client'
 
-import { useState } from 'react'
-import type { ViewName } from '@/lib/types'
-import { Sidebar, MobileNav } from '@/components/sparepart-app/sidebar'
+import { useEffect, useState } from 'react'
+import type { ViewName, User } from '@/lib/types'
+import { LoginPage } from '@/components/sparepart-app/login-page'
+import { AppHeader } from '@/components/sparepart-app/app-header'
+import { BottomTabBar } from '@/components/sparepart-app/bottom-tab-bar'
 import { DashboardView } from '@/components/sparepart-app/views/dashboard-view'
 import { SparepartView } from '@/components/sparepart-app/views/sparepart-view'
 import { MesinView } from '@/components/sparepart-app/views/mesin-view'
-import { SupplierView } from '@/components/sparepart-app/views/supplier-view'
 import { TransaksiView } from '@/components/sparepart-app/views/transaksi-view'
 
 export function SparepartApp() {
+  const [user, setUser] = useState<User | null>(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const [view, setView] = useState<ViewName>('dashboard')
   const [alertsCount, setAlertsCount] = useState(0)
 
-  return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar activeView={view} onViewChange={setView} alertsCount={alertsCount} />
+  // Cek session saat mount
+  useEffect(() => {
+    fetch('/api/me')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.user) setUser(data.user)
+      })
+      .catch(() => {})
+      .finally(() => setCheckingAuth(false))
+  }, [])
 
-      <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          {view === 'dashboard' && <DashboardView />}
-          {view === 'sparepart' && (
-            <SparepartView
-              onNavigateTransaksi={() => setView('transaksi')}
-              onAlertsChange={setAlertsCount}
-            />
-          )}
-          {view === 'mesin' && <MesinView />}
-          {view === 'supplier' && <SupplierView />}
-          {view === 'transaksi' && <TransaksiView />}
-        </main>
+  const handleLogout = async () => {
+    await fetch('/api/auth', { method: 'DELETE' })
+    setUser(null)
+    setView('dashboard')
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="h-10 w-10 rounded-full border-4 border-cyan-600 border-t-transparent animate-spin" />
       </div>
+    )
+  }
 
-      <MobileNav activeView={view} onViewChange={setView} alertsCount={alertsCount} />
+  if (!user) {
+    return <LoginPage onSuccess={(u) => setUser(u)} />
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <AppHeader user={user} onLogout={handleLogout} />
+
+      <main className="flex-1 pb-20">
+        {view === 'dashboard' && <DashboardView user={user} onNavigate={(v) => setView(v)} />}
+        {view === 'sparepart' && (
+          <SparepartView
+            user={user}
+            onNavigateTransaksi={() => setView('transaksi')}
+            onAlertsChange={setAlertsCount}
+          />
+        )}
+        {view === 'mesin' && <MesinView user={user} />}
+        {view === 'transaksi' && <TransaksiView user={user} />}
+      </main>
+
+      <BottomTabBar activeView={view} onViewChange={setView} alertsCount={alertsCount} />
     </div>
   )
 }

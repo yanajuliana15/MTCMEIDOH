@@ -1,23 +1,21 @@
 // Tipe data untuk aplikasi sparepart mesin industri
 
+export type UserRole = 'ADMIN' | 'OPERATOR' | 'GUDANG'
 export type StatusMesin = 'Aktif' | 'Maintenance' | 'Berhenti'
 export type TipeTransaksi = 'MASUK' | 'KELUAR'
 export type StatusStok = 'aman' | 'menipis' | 'habis'
+
+export interface User {
+  userId: string
+  nama: string
+  username: string
+  role: UserRole
+}
 
 export interface Kategori {
   id: string
   nama: string
   deskripsi?: string | null
-  _count?: { spareparts: number }
-}
-
-export interface Supplier {
-  id: string
-  nama: string
-  kontak?: string | null
-  telepon?: string | null
-  email?: string | null
-  alamat?: string | null
   _count?: { spareparts: number }
 }
 
@@ -47,8 +45,6 @@ export interface SparepartSimple {
 export interface Sparepart extends SparepartSimple {
   kategoriId?: string | null
   kategori?: Kategori | null
-  supplierId?: string | null
-  supplier?: Supplier | null
   lokasiRak?: string | null
   catatan?: string | null
   gambar?: string | null
@@ -66,6 +62,7 @@ export interface TransaksiStok {
   jumlah: number
   referensi?: string | null
   catatan?: string | null
+  userId?: string | null
   tanggal: string
   createdAt: string
 }
@@ -73,7 +70,6 @@ export interface TransaksiStok {
 export interface DashboardData {
   totalSparepart: number
   totalMesin: number
-  totalSupplier: number
   totalKategori: number
   stokMenipis: number
   stokHabis: number
@@ -92,7 +88,54 @@ export interface DashboardData {
   }>
 }
 
-export type ViewName = 'dashboard' | 'sparepart' | 'mesin' | 'supplier' | 'transaksi'
+export type ViewName = 'dashboard' | 'sparepart' | 'mesin' | 'transaksi'
+
+// Permission matrix per role
+export const ROLE_PERMISSIONS: Record<UserRole, {
+  canEditSparepart: boolean
+  canDeleteSparepart: boolean
+  canEditMesin: boolean
+  canDeleteMesin: boolean
+  canTransaksiKeluar: boolean
+  canTransaksiMasuk: boolean
+}> = {
+  ADMIN: {
+    canEditSparepart: true,
+    canDeleteSparepart: true,
+    canEditMesin: true,
+    canDeleteMesin: true,
+    canTransaksiKeluar: true,
+    canTransaksiMasuk: true,
+  },
+  GUDANG: {
+    canEditSparepart: true,
+    canDeleteSparepart: false,
+    canEditMesin: false,
+    canDeleteMesin: false,
+    canTransaksiKeluar: true,
+    canTransaksiMasuk: true,
+  },
+  OPERATOR: {
+    canEditSparepart: false,
+    canDeleteSparepart: false,
+    canEditMesin: false,
+    canDeleteMesin: false,
+    canTransaksiKeluar: true,
+    canTransaksiMasuk: false,
+  },
+}
+
+export const ROLE_LABEL: Record<UserRole, string> = {
+  ADMIN: 'Administrator',
+  OPERATOR: 'Operator',
+  GUDANG: 'Staff Gudang',
+}
+
+export const ROLE_BADGE_COLOR: Record<UserRole, string> = {
+  ADMIN: 'bg-purple-100 text-purple-700 border-purple-200',
+  OPERATOR: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  GUDANG: 'bg-amber-100 text-amber-700 border-amber-200',
+}
 
 export function formatRupiah(num: number): string {
   return new Intl.NumberFormat('id-ID', {
@@ -101,6 +144,13 @@ export function formatRupiah(num: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(num)
+}
+
+export function formatRupiahShort(num: number): string {
+  if (num >= 1_000_000_000) return `Rp ${(num / 1_000_000_000).toFixed(1)} M`
+  if (num >= 1_000_000) return `Rp ${(num / 1_000_000).toFixed(1)} jt`
+  if (num >= 1_000) return `Rp ${(num / 1_000).toFixed(0)} rb`
+  return `Rp ${num}`
 }
 
 export function formatTanggal(tgl: string): string {
@@ -118,6 +168,15 @@ export function formatTanggalShort(tgl: string): string {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+  }).format(new Date(tgl))
+}
+
+export function formatTanggalCompact(tgl: string): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(new Date(tgl))
 }
 
