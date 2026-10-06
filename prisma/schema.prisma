@@ -1,4 +1,10 @@
 // Prisma schema for Industrial Machine Sparepart Management System
+// 
+// UNTUK DEV LOKAL: pakai SQLite (default, sudah jalan)
+// UNTUK DEPLOY KE VERCEL + NEON: 
+//   1. Jalankan: bash scripts/switch-to-postgres.sh
+//   2. Set DATABASE_URL ke Neon connection string di Vercel
+//   3. Deploy
 generator client {
   provider = "prisma-client-js"
 }
