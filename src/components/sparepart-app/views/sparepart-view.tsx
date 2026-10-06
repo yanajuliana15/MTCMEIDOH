@@ -12,9 +12,9 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useToast } from '@/hooks/use-toast'
-import { Search, Plus, Edit, Trash2, Package, Filter, AlertTriangle, X, Cog, ArrowLeftRight, ChevronRight, Layers } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Package, X, Cog, ArrowLeftRight, ChevronRight, Layers } from 'lucide-react'
 
 interface SparepartViewProps {
   user: User
@@ -73,7 +73,6 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
     () => items.filter((i) => getStatusStok(i.stok, i.stokMinimum) !== 'aman').length,
     [items]
   )
-
   const onAlertsChangeRef = useRef(onAlertsChange)
   onAlertsChangeRef.current = onAlertsChange
   useEffect(() => {
@@ -84,40 +83,30 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
     setSubmitting(true)
     try {
       const payload: any = {
-        kode: formData.kode,
-        nama: formData.nama,
+        kode: formData.kode, nama: formData.nama,
         kategoriId: formData.kategoriId || null,
         satuan: formData.satuan,
         stokMinimum: Number(formData.stokMinimum) || 0,
         hargaBeli: Number(formData.hargaBeli) || 0,
         hargaJual: Number(formData.hargaJual) || 0,
-        lokasiRak: formData.lokasiRak,
-        catatan: formData.catatan,
+        lokasiRak: formData.lokasiRak, catatan: formData.catatan,
         mesinIds: formData.mesinIds,
       }
       if (editingItem) {
         const res = await fetch(`/api/sparepart/${editingItem.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
-        if (!res.ok) {
-          const err = await res.json()
-          throw new Error(err.error || 'Gagal mengupdate sparepart')
-        }
-        toast({ title: 'Berhasil', description: 'Sparepart berhasil diperbarui' })
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Gagal update') }
+        toast({ title: 'Berhasil', description: 'Sparepart diperbarui' })
       } else {
         payload.stok = Number(formData.stok) || 0
         const res = await fetch('/api/sparepart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
-        if (!res.ok) {
-          const err = await res.json()
-          throw new Error(err.error || 'Gagal menambah sparepart')
-        }
-        toast({ title: 'Berhasil', description: 'Sparepart baru ditambahkan' })
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Gagal tambah') }
+        toast({ title: 'Berhasil', description: 'Sparepart ditambahkan' })
       }
       setIsFormOpen(false)
       setEditingItem(null)
@@ -134,7 +123,7 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
     setSubmitting(true)
     try {
       const res = await fetch(`/api/sparepart/${deleteItem.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Gagal menghapus sparepart')
+      if (!res.ok) throw new Error('Gagal hapus')
       toast({ title: 'Berhasil', description: 'Sparepart dihapus' })
       setDeleteItem(null)
       loadData()
@@ -145,14 +134,9 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
     }
   }
 
-  const clearFilters = () => {
-    setSearch('')
-    setFilterKategori('all')
-    setFilterStatus('all')
-  }
+  const clearFilters = () => { setSearch(''); setFilterKategori('all'); setFilterStatus('all') }
   const hasActiveFilters = search || filterKategori !== 'all' || filterStatus !== 'all'
 
-  // Filter chips untuk quick filter
   const statusChips: Array<{ id: 'all' | StatusStok; label: string; count: number }> = [
     { id: 'all', label: 'Semua', count: items.length },
     { id: 'habis', label: 'Habis', count: items.filter((i) => getStatusStok(i.stok, i.stokMinimum) === 'habis').length },
@@ -163,36 +147,35 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
   return (
     <div className="pb-24">
       {/* Search Header */}
-      <div className="sticky top-[57px] z-20 bg-white/95 backdrop-blur border-b">
+      <div className="sticky top-[53px] z-20 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="p-3 max-w-5xl mx-auto space-y-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Cari sparepart..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10 rounded-xl bg-slate-50 border-slate-200"
+              className="pl-9 pr-9 h-10 rounded-xl bg-slate-50 border-slate-200"
             />
             {hasActiveFilters && (
-              <button onClick={clearFilters} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <button onClick={clearFilters} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
 
-          {/* Filter chips */}
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
             {statusChips.map((chip) => (
               <button
                 key={chip.id}
                 onClick={() => setFilterStatus(chip.id)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all ${
                   filterStatus === chip.id
-                    ? 'bg-cyan-600 text-white'
+                    ? 'bg-slate-900 text-white shadow-sm'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {chip.label} ({chip.count})
+                {chip.label} <span className="opacity-70">({chip.count})</span>
               </button>
             ))}
             <Select value={filterKategori} onValueChange={setFilterKategori}>
@@ -220,55 +203,55 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
             ))}
           </div>
         ) : error ? (
-          <div className="text-destructive text-sm text-center py-8">Error: {error}</div>
+          <div className="text-red-600 text-sm text-center py-8">Error: {error}</div>
         ) : items.length === 0 ? (
           <div className="text-center py-16">
-            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-30" />
-            <p className="text-sm font-medium">Tidak ada sparepart</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <Package className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm font-medium text-slate-700">Tidak ada sparepart</p>
+            <p className="text-xs text-slate-400 mt-1">
               {hasActiveFilters ? 'Coba ubah filter' : 'Klik tombol + untuk menambah'}
             </p>
           </div>
         ) : (
           items.map((item) => {
             const status = getStatusStok(item.stok, item.stokMinimum)
-            const statusStyle = {
-              habis: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', dot: 'bg-red-500', label: 'Habis' },
-              menipis: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', dot: 'bg-amber-500', label: 'Menipis' },
-              aman: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', dot: 'bg-emerald-500', label: 'Aman' },
+            const styles = {
+              habis: { icon: 'bg-red-50 text-red-600', dot: 'bg-red-500', label: 'Habis', labelColor: 'text-red-600 bg-red-50' },
+              menipis: { icon: 'bg-amber-50 text-amber-600', dot: 'bg-amber-500', label: 'Menipis', labelColor: 'text-amber-600 bg-amber-50' },
+              aman: { icon: 'bg-emerald-50 text-emerald-600', dot: 'bg-emerald-500', label: 'Aman', labelColor: 'text-emerald-600 bg-emerald-50' },
             }[status]
             return (
               <Card
                 key={item.id}
-                className="border-0 shadow-sm rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99] transition-transform"
+                className="border border-slate-200 shadow-sm rounded-2xl overflow-hidden cursor-pointer hover:shadow-md hover:border-slate-300 transition-all active:scale-[0.99]"
                 onClick={() => setDetailItem(item)}
               >
                 <div className="flex items-center gap-3 p-3">
-                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${statusStyle.bg}`}>
-                    <Package className={`h-5 w-5 ${statusStyle.text}`} />
+                  <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${styles.icon}`}>
+                    <Package className="h-5 w-5" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <Badge variant="outline" className="font-mono text-[9px] py-0 px-1.5 h-4">{item.kode}</Badge>
+                      <Badge variant="outline" className="font-mono text-[9px] py-0 px-1.5 h-4 border-slate-200 text-slate-500">{item.kode}</Badge>
                       {item.kategori && (
-                        <span className="text-[10px] text-muted-foreground truncate">{item.kategori.nama}</span>
+                        <span className="text-[10px] text-slate-400 truncate">{item.kategori.nama}</span>
                       )}
                     </div>
-                    <div className="text-sm font-semibold truncate">{item.nama}</div>
+                    <div className="text-sm font-semibold text-slate-900 truncate">{item.nama}</div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${statusStyle.text}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.dot}`} />
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0 rounded ${styles.labelColor}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${styles.dot}`} />
                         {item.stok} {item.satuan}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">min. {item.stokMinimum}</span>
+                      <span className="text-[10px] text-slate-400">min. {item.stokMinimum}</span>
                       {item.lokasiRak && (
-                        <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4">{item.lokasiRak}</Badge>
+                        <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4 bg-slate-100 text-slate-600">{item.lokasiRak}</Badge>
                       )}
                     </div>
                   </div>
 
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-slate-300 shrink-0" />
                 </div>
               </Card>
             )
@@ -280,21 +263,17 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
       {perm.canEditSparepart && (
         <button
           onClick={() => { setEditingItem(null); setIsFormOpen(true) }}
-          className="fixed bottom-20 md:bottom-6 right-4 z-30 h-14 w-14 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white shadow-lg shadow-cyan-600/40 flex items-center justify-center active:scale-95 transition-transform"
+          className="fixed bottom-20 md:bottom-6 right-4 z-30 h-12 w-12 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/30 flex items-center justify-center active:scale-95 transition-all"
           aria-label="Tambah Sparepart"
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-5 w-5" />
         </button>
       )}
 
-      {/* Form Dialog */}
       <SparepartForm
         key={editingItem?.id || 'new'}
         open={isFormOpen}
-        onOpenChange={(open) => {
-          setIsFormOpen(open)
-          if (!open) setEditingItem(null)
-        }}
+        onOpenChange={(open) => { setIsFormOpen(open); if (!open) setEditingItem(null) }}
         editingItem={editingItem}
         kategoriList={kategoriList}
         mesinList={mesinList}
@@ -302,7 +281,6 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
         submitting={submitting}
       />
 
-      {/* Detail Sheet */}
       <Sheet open={!!detailItem} onOpenChange={(open) => !open && setDetailItem(null)}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto p-0">
           {detailItem && (
@@ -314,18 +292,14 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
                 setEditingItem(detailItem)
                 setIsFormOpen(true)
               } : undefined}
-              onTransaksi={() => {
-                setDetailItem(null)
-                onNavigateTransaksi()
-              }}
+              onTransaksi={() => { setDetailItem(null); onNavigateTransaksi() }}
             />
           )}
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirm */}
       <AlertDialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Sparepart?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -334,7 +308,7 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={submitting} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDelete} disabled={submitting} className="bg-red-600 hover:bg-red-700 rounded-lg">
               {submitting ? 'Menghapus...' : 'Hapus'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -344,16 +318,14 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
   )
 }
 
-function DetailPanel({
-  item, onClose, onEdit, onTransaksi,
-}: {
+function DetailPanel({ item, onClose, onEdit, onTransaksi }: {
   item: Sparepart
   onClose: () => void
   onEdit?: () => void
   onTransaksi: () => void
 }) {
   const status = getStatusStok(item.stok, item.stokMinimum)
-  const statusInfo = {
+  const headerStyles = {
     habis: { bg: 'bg-red-500', label: 'Stok Habis', sub: 'Segera lakukan PO' },
     menipis: { bg: 'bg-amber-500', label: 'Stok Menipis', sub: 'Perlu segera restock' },
     aman: { bg: 'bg-emerald-500', label: 'Stok Aman', sub: 'Stok mencukupi' },
@@ -361,48 +333,52 @@ function DetailPanel({
 
   return (
     <>
-      {/* Header gradient */}
-      <div className={`bg-gradient-to-br ${status === 'habis' ? 'from-red-500 to-red-600' : status === 'menipis' ? 'from-amber-500 to-amber-600' : 'from-cyan-600 to-cyan-700'} text-white p-5`}>
-        <div className="flex items-center justify-between mb-3">
-          <Badge className="bg-white/20 text-white border-0 font-mono text-[10px]">{item.kode}</Badge>
-          <button onClick={onClose} className="text-white/80 hover:text-white">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <h2 className="text-lg font-bold leading-tight">{item.nama}</h2>
-        {item.kategori && (
-          <p className="text-xs text-white/80 mt-1">{item.kategori.nama}</p>
-        )}
+      {/* Header dark slate */}
+      <div className="bg-slate-900 text-white p-5 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.06]" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+          backgroundSize: '16px 16px',
+        }} />
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-orange-500/20 blur-2xl" />
 
-        <div className="mt-4 flex items-end justify-between">
-          <div>
-            <div className="text-xs text-white/80">Stok Saat Ini</div>
-            <div className="text-3xl font-bold">{item.stok} <span className="text-base font-normal">{item.satuan}</span></div>
-            <div className="text-xs text-white/80 mt-0.5">Min: {item.stokMinimum} {item.satuan}</div>
+        <div className="relative">
+          <div className="flex items-center justify-between mb-3">
+            <Badge className="bg-white/10 text-white border-0 font-mono text-[10px] hover:bg-white/10">{item.kode}</Badge>
+            <button onClick={onClose} className="text-white/70 hover:text-white">
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <div className="text-right">
-            <div className="text-xs text-white/80">{statusInfo.label}</div>
-            <div className="text-xs text-white/90">{statusInfo.sub}</div>
+          <h2 className="text-lg font-bold leading-tight">{item.nama}</h2>
+          {item.kategori && <p className="text-xs text-slate-400 mt-1">{item.kategori.nama}</p>}
+
+          <div className="mt-4 flex items-end justify-between">
+            <div>
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider">Stok Saat Ini</div>
+              <div className="text-3xl font-bold">{item.stok} <span className="text-base font-normal text-slate-300">{item.satuan}</span></div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Min: {item.stokMinimum} {item.satuan}</div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${headerStyles.bg}`} />
+              <span className="text-xs font-medium">{headerStyles.label}</span>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Harga */}
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-xl bg-slate-50 p-3">
-            <div className="text-[10px] text-muted-foreground uppercase">Harga Beli</div>
-            <div className="text-base font-bold">{formatRupiah(item.hargaBeli)}</div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Harga Beli</div>
+            <div className="text-base font-bold text-slate-900">{formatRupiah(item.hargaBeli)}</div>
           </div>
           <div className="rounded-xl bg-emerald-50 p-3">
-            <div className="text-[10px] text-emerald-700 uppercase">Harga Jual</div>
+            <div className="text-[10px] text-emerald-700 uppercase tracking-wider">Harga Jual</div>
             <div className="text-base font-bold text-emerald-700">{formatRupiah(item.hargaJual)}</div>
           </div>
         </div>
 
-        {/* Detail */}
         <div>
-          <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">Informasi</div>
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Informasi</div>
           <div className="space-y-2 text-sm">
             <DetailRow label="Lokasi Rak" value={item.lokasiRak || '-'} />
             <DetailRow label="Dibuat" value={formatTanggalShort(item.createdAt)} />
@@ -411,23 +387,23 @@ function DetailPanel({
 
         {item.catatan && (
           <div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">Catatan</div>
-            <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm">{item.catatan}</div>
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Catatan</div>
+            <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm text-amber-900">{item.catatan}</div>
           </div>
         )}
 
         {item.mesin && item.mesin.length > 0 && (
           <div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
               Kompatibel dengan {item.mesin.length} Mesin
             </div>
             <div className="space-y-1.5">
               {item.mesin.map(({ mesin }) => (
-                <div key={mesin.id} className="flex items-center gap-2 rounded-xl border p-2.5 text-sm">
-                  <Cog className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div key={mesin.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2.5 text-sm">
+                  <Cog className="h-4 w-4 text-slate-400 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{mesin.nama}</div>
-                    <div className="text-[10px] text-muted-foreground">{mesin.kode} · {mesin.lokasi || '-'}</div>
+                    <div className="font-medium text-slate-900 truncate">{mesin.nama}</div>
+                    <div className="text-[10px] text-slate-500">{mesin.kode} · {mesin.lokasi || '-'}</div>
                   </div>
                   <Badge variant="outline" className="text-[9px]">{mesin.status}</Badge>
                 </div>
@@ -436,13 +412,12 @@ function DetailPanel({
           </div>
         )}
 
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl h-11" onClick={onTransaksi}>
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <Button variant="outline" className="rounded-xl h-11 border-slate-200" onClick={onTransaksi}>
             <ArrowLeftRight className="h-4 w-4 mr-2" /> Transaksi
           </Button>
           {onEdit && (
-            <Button className="rounded-xl h-11 bg-cyan-600 hover:bg-cyan-700" onClick={onEdit}>
+            <Button className="rounded-xl h-11 bg-slate-900 hover:bg-slate-800" onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" /> Edit
             </Button>
           )}
@@ -455,13 +430,12 @@ function DetailPanel({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-right">{value}</span>
+      <span className="text-slate-500">{label}</span>
+      <span className="font-medium text-slate-900 text-right">{value}</span>
     </div>
   )
 }
 
-// === Form ===
 interface FormData {
   kode: string
   nama: string
@@ -496,16 +470,12 @@ function SparepartForm({ open, onOpenChange, editingItem, kategoriList, mesinLis
   const [form, setForm] = useState<FormData>(() => {
     if (editingItem) {
       return {
-        kode: editingItem.kode,
-        nama: editingItem.nama,
+        kode: editingItem.kode, nama: editingItem.nama,
         kategoriId: editingItem.kategoriId || '',
         satuan: editingItem.satuan,
-        stok: String(editingItem.stok),
-        stokMinimum: String(editingItem.stokMinimum),
-        hargaBeli: String(editingItem.hargaBeli),
-        hargaJual: String(editingItem.hargaJual),
-        lokasiRak: editingItem.lokasiRak || '',
-        catatan: editingItem.catatan || '',
+        stok: String(editingItem.stok), stokMinimum: String(editingItem.stokMinimum),
+        hargaBeli: String(editingItem.hargaBeli), hargaJual: String(editingItem.hargaJual),
+        lokasiRak: editingItem.lokasiRak || '', catatan: editingItem.catatan || '',
         mesinIds: editingItem.mesin?.map((m) => m.mesin.id) || [],
       }
     }
@@ -578,7 +548,7 @@ function SparepartForm({ open, onOpenChange, editingItem, kategoriList, mesinLis
             <div className="space-y-1.5">
               <Label htmlFor="stok" className="text-xs">{!editingItem ? 'Stok Awal' : 'Stok'}</Label>
               <Input id="stok" type="number" min="0" value={form.stok} onChange={(e) => set('stok', e.target.value)} disabled={!!editingItem} className="h-10" />
-              {editingItem && <p className="text-[10px] text-muted-foreground">Ubah via transaksi</p>}
+              {editingItem && <p className="text-[10px] text-slate-500">Ubah via transaksi</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="stokMinimum" className="text-xs">Min. Stok</Label>
@@ -609,16 +579,16 @@ function SparepartForm({ open, onOpenChange, editingItem, kategoriList, mesinLis
 
           <div className="space-y-1.5">
             <Label className="text-xs">Kompatibel dengan Mesin (Opsional)</Label>
-            <div className="border rounded-xl p-2 max-h-32 overflow-y-auto space-y-1">
+            <div className="border border-slate-200 rounded-xl p-2 max-h-32 overflow-y-auto space-y-1">
               {mesinList.map((m) => (
-                <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded-lg px-2 py-1">
+                <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1">
                   <input
                     type="checkbox"
                     checked={form.mesinIds.includes(m.id)}
                     onChange={() => toggleMesin(m.id)}
                     className="rounded"
                   />
-                  <span className="flex-1 truncate">{m.nama}</span>
+                  <span className="flex-1 truncate text-slate-700">{m.nama}</span>
                   <Badge variant="outline" className="text-[9px]">{m.kode}</Badge>
                 </label>
               ))}
@@ -627,7 +597,7 @@ function SparepartForm({ open, onOpenChange, editingItem, kategoriList, mesinLis
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Batal</Button>
-            <Button type="submit" disabled={submitting} className="bg-cyan-600 hover:bg-cyan-700">
+            <Button type="submit" disabled={submitting} className="bg-slate-900 hover:bg-slate-800 rounded-lg">
               {submitting ? 'Menyimpan...' : editingItem ? 'Simpan' : 'Tambah'}
             </Button>
           </DialogFooter>

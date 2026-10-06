@@ -132,9 +132,9 @@ export const ROLE_LABEL: Record<UserRole, string> = {
 }
 
 export const ROLE_BADGE_COLOR: Record<UserRole, string> = {
-  ADMIN: 'bg-purple-100 text-purple-700 border-purple-200',
-  OPERATOR: 'bg-cyan-100 text-cyan-700 border-cyan-200',
-  GUDANG: 'bg-amber-100 text-amber-700 border-amber-200',
+  ADMIN: 'bg-slate-100 text-slate-700 border-slate-200',
+  OPERATOR: 'bg-orange-50 text-orange-700 border-orange-200',
+  GUDANG: 'bg-amber-50 text-amber-700 border-amber-200',
 }
 
 export function formatRupiah(num: number): string {
