@@ -7,7 +7,7 @@ export async function GET(req: Request) {
     if (!match) {
       return NextResponse.json({ user: null })
     }
-    const decoded = Buffer.from(match[1], 'base64').toString('utf-8')
+    const decoded = Buffer.from(decodeURIComponent(match[1]), 'base64').toString('utf-8')
     const session = JSON.parse(decoded)
     return NextResponse.json({ user: session })
   } catch {

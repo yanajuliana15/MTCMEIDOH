@@ -6,7 +6,7 @@ function getSession(req: NextRequest) {
   const match = cookie.match(/sp_session=([^;]+)/)
   if (!match) return null
   try {
-    return JSON.parse(Buffer.from(match[1], 'base64').toString('utf-8'))
+    return JSON.parse(Buffer.from(decodeURIComponent(match[1]), 'base64').toString('utf-8'))
   } catch {
     return null
   }

@@ -178,7 +178,14 @@ export function SparepartView({ user, onNavigateTransaksi, onAlertsChange }: Spa
               { key: 'lokasiRak', label: 'lokasiRak' },
               { key: 'catatan', label: 'catatan' },
             ]}
+            filters={{
+              search,
+              kategoriId: filterKategori !== 'all' ? filterKategori : undefined,
+              supplierId: filterSupplier !== 'all' ? filterSupplier : undefined,
+              statusStok: filterStatus !== 'all' ? filterStatus : undefined,
+            }}
             showImport={perm.canEditSparepart}
+            canExportExcel={user.role === 'ADMIN'}
             onImported={loadData}
           />
           {perm.canEditSparepart && (

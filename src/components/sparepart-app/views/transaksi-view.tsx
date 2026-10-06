@@ -100,7 +100,9 @@ export function TransaksiView({ user }: { user: User }) {
               { key: 'referensi', label: 'referensi' },
               { key: 'catatan', label: 'catatan' },
             ]}
+            filters={{ tipe: filterTipe !== 'all' ? filterTipe : undefined }}
             showImport={canAddTransaksi}
+            canExportExcel={user.role === 'ADMIN'}
             onImported={loadData}
           />
           {canAddTransaksi && (
