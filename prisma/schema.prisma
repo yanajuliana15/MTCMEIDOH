@@ -7,8 +7,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  // uncomment next line if you use Prisma <5.10
-  // directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
@@ -73,4 +71,32 @@ model Sparepart {
   catatan       String?
   gambar        String?
   mesin         MesinSparepart[]
-  trans
+  transaksi     TransaksiStok[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model MesinSparepart {
+  id          String     @id @default(cuid())
+  mesinId     String
+  sparepartId String
+  mesin       Mesin      @relation(fields: [mesinId], references: [id], onDelete: Cascade)
+  sparepart   Sparepart  @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+
+  @@unique([mesinId, sparepartId])
+}
+
+model TransaksiStok {
+  id          String     @id @default(cuid())
+  sparepartId String
+  sparepart   Sparepart  @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
+  tipe        String
+  jumlah      Int
+  referensi   String?
+  catatan     String?
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tanggal     DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+}
