@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import bcrypt from 'bcryptjs'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +9,7 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await db.user.findUnique({ where: { username } })
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || user.password !== password) {
       return NextResponse.json({ error: 'Username atau password salah' }, { status: 401 })
     }
 
