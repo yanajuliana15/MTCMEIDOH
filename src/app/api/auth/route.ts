@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import bcrypt from 'bcryptjs'
 
-// Login dengan cookie sederhana (BASE64-encoded JSON) — demo only.
-// Production: gunakan NextAuth.js / jwt / session encryption.
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json()
@@ -11,7 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await db.user.findUnique({ where: { username } })
-    if (!user || user.password !== password) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json({ error: 'Username atau password salah' }, { status: 401 })
     }
 
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 hari
+      maxAge: 60 * 60 * 24 * 7,
       secure: process.env.NODE_ENV === 'production',
     })
     return res
